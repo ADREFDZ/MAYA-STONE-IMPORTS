@@ -1,0 +1,258 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "../styles/foundations/colors.css";
+
+/* =========================================
+   VARIABLES NATIVAS (:root) — MAYA DESIGN SYSTEM
+   ========================================= */
+:root {
+  /* -----------------------------------------
+     01. Containers & Gutters
+     ----------------------------------------- */
+  --maya-container-wide: 1440px;
+  --maya-container: 1280px;
+  --maya-container-narrow: 960px;
+  --maya-container-reading: 720px;
+
+  --maya-gutter-mobile: 1rem;
+  --maya-gutter-tablet: 2rem;
+  --maya-gutter-desktop: 3.5rem;
+  --maya-gutter-wide: 4.5rem;
+
+  /* -----------------------------------------
+     02. Fluid Typography Scale (Mobile Calibrated)
+     ----------------------------------------- */
+  --maya-type-display: clamp(1.875rem, 4.2vw, 3.75rem);
+  --maya-type-h1: clamp(1.5rem, 3.4vw, 3rem);
+  --maya-type-h2: clamp(1.25rem, 2.5vw, 2.25rem);
+  --maya-type-h3: clamp(1.05rem, 1.8vw, 1.625rem);
+  --maya-type-h4: clamp(0.875rem, 1.2vw, 1.1875rem);
+  --maya-type-body-lg: clamp(0.875rem, 1.05vw, 1.0625rem);
+  --maya-type-body: clamp(0.8125rem, 0.9vw, 0.9375rem);
+  --maya-type-small: clamp(0.75rem, 0.8vw, 0.8125rem);
+  /* Etiquetas: mínimo 11px (antes 9.3px) para legibilidad */
+  --maya-type-label: clamp(0.6875rem, 0.7vw, 0.75rem);
+
+  --maya-leading-display: 1.05;
+  --maya-leading-heading: 1.12;
+  --maya-leading-body: 1.55;
+  --maya-leading-label: 1.25;
+
+  --maya-tracking-label: 0.16em;
+  --maya-tracking-data: 0.1em;
+  --maya-tracking-nav: 0.18em;
+
+  /* -----------------------------------------
+     03. Spacing & Rhythm
+     ----------------------------------------- */
+  --maya-space-section: clamp(3.5rem, 7vw, 7.5rem);
+  --maya-space-block: clamp(2rem, 4.5vw, 4.5rem);
+  --maya-space-content: clamp(1rem, 2vw, 2.25rem);
+}
+
+/* =========================================
+   CONFIGURACIÓN TAILWIND V4 (@theme)
+   Los colores viven en styles/foundations/colors.css
+   ========================================= */
+@theme {
+  /* ---------- Tipografía ----------
+     Graphik es la única familia de la marca. `font-mono` se conserva como
+     nombre de estilo para etiquetas/datos (fichas técnicas), pero también
+     usa Graphik, con cifras tabulares para que los números alineen. */
+  --font-sans: var(--font-graphik), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-graphik), ui-sans-serif, system-ui, sans-serif;
+
+  /* Solo se cargan Graphik Light (300) y Regular (400). Los pesos mayores se
+     mapean a 400 para que el navegador NO genere negritas falsas. Si en el
+     futuro se agrega Graphik Medium/Semibold, basta con cambiar estos valores. */
+  --font-weight-medium: 400;
+  --font-weight-semibold: 400;
+  --font-weight-bold: 400;
+
+  /* ---------- Radios ----------
+     Decisión de diseño: esquinas rectas (estética arquitectónica).
+     Se mantienen los tokens para poder suavizar todo el sitio desde aquí. */
+  --radius-3xs: 0px;
+  --radius-2xs: 0px;
+
+  /* ---------- Escala tipográfica ---------- */
+  --text-maya-display: var(--maya-type-display);
+  --text-maya-display--line-height: var(--maya-leading-display);
+  --text-maya-h1: var(--maya-type-h1);
+  --text-maya-h1--line-height: var(--maya-leading-heading);
+  --text-maya-h2: var(--maya-type-h2);
+  --text-maya-h2--line-height: var(--maya-leading-heading);
+  --text-maya-h3: var(--maya-type-h3);
+  --text-maya-h3--line-height: var(--maya-leading-heading);
+  --text-maya-h4: var(--maya-type-h4);
+  --text-maya-h4--line-height: var(--maya-leading-heading);
+  --text-maya-body-lg: var(--maya-type-body-lg);
+  --text-maya-body-lg--line-height: var(--maya-leading-body);
+  --text-maya-body: var(--maya-type-body);
+  --text-maya-body--line-height: var(--maya-leading-body);
+  --text-maya-small: var(--maya-type-small);
+  --text-maya-small--line-height: var(--maya-leading-body);
+  --text-maya-label: var(--maya-type-label);
+  --text-maya-label--line-height: var(--maya-leading-label);
+
+  --tracking-editorial: 0em;
+  --tracking-label: var(--maya-tracking-label);
+  --tracking-data: var(--maya-tracking-data);
+  --tracking-nav: var(--maya-tracking-nav);
+}
+
+/* =========================================
+   ESTILOS BASE
+   ========================================= */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: clip;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  /* Nunca sintetizar negritas/itálicas que no estén cargadas */
+  font-synthesis-weight: none;
+}
+
+/* Etiquetas y datos con cifras alineadas */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Foco visible al navegar con teclado (accesibilidad). Usa el bronce de
+   texto, que se adapta a fondos claros u oscuros. Prevalece sobre los
+   `focus:outline-none` de los componentes solo cuando el foco es por teclado. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 1px solid var(--color-accent-ink) !important;
+  outline-offset: 2px;
+}
+
+main {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.section-dark {
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-on-dark);
+}
+
+.section-dark-pure {
+  background-color: var(--color-bg-dark-pure);
+  color: var(--color-text-on-dark);
+}
+
+/* =========================================
+   UTILIDADES DE CONTENEDORES Y RITMO
+   ========================================= */
+@utility editorial-container {
+  width: 100%;
+  max-width: var(--maya-container-wide);
+  margin-inline: auto;
+  padding-inline: var(--maya-gutter-mobile);
+}
+
+@utility maya-container {
+  width: 100%;
+  max-width: var(--maya-container);
+  margin-inline: auto;
+  padding-inline: var(--maya-gutter-mobile);
+}
+
+@utility maya-container-narrow {
+  width: 100%;
+  max-width: var(--maya-container-narrow);
+  margin-inline: auto;
+  padding-inline: var(--maya-gutter-mobile);
+}
+
+@utility maya-section {
+  padding-block: var(--maya-space-section);
+}
+
+@utility maya-block {
+  padding-block: var(--maya-space-block);
+}
+
+/* Oculta la barra de scroll en carruseles horizontales (sigue siendo scrolleable) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .editorial-container,
+  .maya-container,
+  .maya-container-narrow {
+    padding-inline: var(--maya-gutter-tablet);
+  }
+}
+
+@media (min-width: 1024px) {
+  .editorial-container,
+  .maya-container,
+  .maya-container-narrow {
+    padding-inline: var(--maya-gutter-desktop);
+  }
+}
+
+@media (min-width: 1536px) {
+  .editorial-container,
+  .maya-container,
+  .maya-container-narrow {
+    padding-inline: var(--maya-gutter-wide);
+  }
+}
+
+/* Desactivar botón de contraseña nativo en Edge */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+}
+
+/* Desactivar autocompletado nativo en WebKit / Chrome */
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  right: 0 !important;
+}
+
+@keyframes indeterminate {
+  0% {
+    left: -50%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.animate-indeterminate {
+  animation: indeterminate 1.2s infinite ease-in-out;
+}
+
+/* =========================================
+   ACCESIBILIDAD: MOVIMIENTO REDUCIDO
+   Respeta la preferencia del sistema operativo. Las animaciones GSAP del
+   Hero y Philosophy también la consultan (ver componentes).
+   ========================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,162 @@
+/* =========================================================================
+   MAYA — COLORES
+   -------------------------------------------------------------------------
+   1. RAW: valores de marca (Pantone). No se usan directo en componentes.
+   2. @theme: tokens semánticos que generan las utilidades de Tailwind
+      (bg-background, text-text-primary, border-border-light, text-accent-ink…).
+      Se declaran con `static` para que TODAS las variables existan en :root,
+      aunque alguna solo se use desde CSS o estilos inline.
+   3. Contexto oscuro: el bronce de TEXTO se aclara automáticamente.
+   4. Paletas por colección.
+   ========================================================================= */
+
+:root {
+  /* ---------------- RAW (Identidad de marca estricta) ---------------- */
+  --raw-black-pure: #000000; /* PANTONE BLACK C */
+  --raw-black-neutral: #252525; /* PANTONE NEUTRAL BLACK C */
+  --raw-gray-warm: #d7d2cb; /* PANTONE WARM GRAY 1 C */
+  --raw-gray-cool: #d9d8d6; /* PANTONE COOL GRAY 1 C */
+  --raw-white: #ffffff;
+
+  /* Acento bronce/latón (fuera del manual Pantone; detalle material).
+     - bronze:       líneas, subrayados, puntos, fondos pequeños (decorativo).
+     - bronze-ink-*: texto. Ajustados para cumplir contraste WCAG AA (≥4.5:1). */
+  --raw-accent-bronze: #8c7355;
+  --raw-accent-bronze-ink-dark: #5f4d38; /* sobre fondos claros: 5.4:1 */
+  --raw-accent-bronze-ink-light: #b39a78; /* sobre fondos oscuros: 5.7:1 */
+}
+
+@theme static {
+  /* Paleta base (utilidades: bg-black-neutral, text-gray-warm, …) */
+  --color-black-pure: var(--raw-black-pure);
+  --color-black-neutral: var(--raw-black-neutral);
+  --color-gray-warm: var(--raw-gray-warm);
+  --color-gray-cool: var(--raw-gray-cool);
+  --color-white: var(--raw-white);
+
+  /* Fondos y superficies */
+  --color-background: var(--raw-gray-warm);
+  --color-surface: var(--raw-gray-cool);
+  --color-surface-secondary: var(--raw-white);
+
+  /* Bordes */
+  --color-border-light: rgba(37, 37, 37, 0.15);
+  --color-border-strong: var(--raw-black-neutral);
+
+  /* Texto sobre fondo claro */
+  --color-text-primary: var(--raw-black-neutral);
+  --color-text-secondary: rgba(37, 37, 37, 0.65);
+  --color-text-muted: #5a5855;
+  --color-text-inverse: var(--raw-gray-warm);
+
+  /* Acento */
+  --color-accent: var(--raw-accent-bronze); /* decorativo: bg-, border-, líneas */
+  --color-accent-soft: rgba(140, 115, 85, 0.14);
+  --color-accent-ink: var(--raw-accent-bronze-ink-dark); /* texto: text-accent-ink */
+
+  /* Bloques oscuros */
+  --color-bg-dark: var(--raw-black-neutral);
+  --color-bg-dark-pure: var(--raw-black-pure);
+  --color-text-on-dark: var(--raw-gray-warm);
+  --color-text-on-dark-muted: rgba(215, 210, 203, 0.65);
+}
+
+/* =========================================================================
+   CONTEXTO OSCURO → bronce de texto claro
+   Cualquier elemento dentro de un contenedor oscuro hereda el tono claro, sin
+   tener que cambiar clases en cada componente.
+   ========================================================================= */
+:where(
+    body > header,
+    body > footer,
+    .section-dark,
+    .section-dark-pure,
+    .theme-collection-essentials,
+    .theme-collection-reserve,
+    .theme-collection-dune,
+    .theme-collection-dune-ivory,
+    [class~="bg-black-neutral"],
+    [class~="bg-black-neutral/85"],
+    [class~="bg-black-neutral/90"],
+    [class~="bg-black-neutral/95"],
+    [class~="bg-black-neutral/98"],
+    [class~="bg-black-pure"],
+    [class~="bg-black-pure/80"],
+    [class~="bg-black-pure/85"],
+    [class~="bg-black-pure/90"],
+    [class~="bg-bg-dark"],
+    [class~="bg-bg-dark-pure"]
+  ) {
+  --color-accent-ink: var(--raw-accent-bronze-ink-light);
+}
+
+/* =========================================================================
+   PALETAS TEMÁTICAS EDITORIALES POR COLECCIÓN (Manual MAYA)
+   ========================================================================= */
+
+/* 1. ESSENTIALS */
+.theme-collection-essentials {
+  --col-bg: #152b21; /* Pantone 5535 XGC */
+  --col-surface: #1e3a2e;
+  --col-card-bg: #102119;
+  --col-card-border: rgba(247, 243, 227, 0.15);
+  --col-text: #f7f3e3; /* Pantone 9064 U */
+  --col-text-muted: rgba(247, 243, 227, 0.72);
+  --col-accent: #e5dfc8;
+  --col-secondary: #9b948a; /* Pantone 404 C */
+  --col-border: rgba(247, 243, 227, 0.14);
+  --col-spec-bg: #0c1712;
+  --col-spec-text: #f7f3e3;
+  /* Isotipo en blanco sobre fondo oscuro */
+  --col-logo-filter: brightness(0) invert(1);
+}
+
+/* 2. RESERVE */
+.theme-collection-reserve {
+  --col-bg: #121921; /* Black 6 C / Dark Slate */
+  --col-surface: #1a232d;
+  --col-card-bg: #0c1117;
+  --col-card-border: rgba(243, 242, 238, 0.15);
+  --col-text: #f3f2ee; /* Pantone 11-0601 TPG */
+  --col-text-muted: rgba(243, 242, 238, 0.72);
+  --col-accent: #c8c9c7; /* Cool Gray 3 C */
+  --col-secondary: #8e9092; /* Cool Gray 11 C */
+  --col-border: rgba(243, 242, 238, 0.14);
+  --col-spec-bg: #080c10;
+  --col-spec-text: #f3f2ee;
+  --col-logo-filter: brightness(0) invert(1);
+}
+
+/* 3. TRAVERTINO */
+.theme-collection-travertino {
+  --col-bg: #ece9df; /* Pantone 9043 C */
+  --col-surface: #dfdacd;
+  --col-card-bg: #ffffff;
+  --col-card-border: rgba(16, 24, 32, 0.12);
+  --col-text: #101820; /* Pantone Black 6 C */
+  --col-text-muted: rgba(16, 24, 32, 0.7);
+  --col-accent: #63564a; /* Pantone 7532 C */
+  --col-secondary: #8e8377; /* Pantone 7534 C */
+  --col-border: rgba(16, 24, 32, 0.12);
+  --col-spec-bg: #1a1815;
+  --col-spec-text: #f7f3e3;
+  /* Isotipo en negro sobre fondo claro */
+  --col-logo-filter: brightness(0);
+}
+
+/* 4. DUNE IVORY / DUNE */
+.theme-collection-dune-ivory,
+.theme-collection-dune {
+  --col-bg: #9e3c14; /* Pantone 167 C */
+  --col-surface: #b3481b;
+  --col-card-bg: #7d2f0e;
+  --col-card-border: rgba(240, 237, 225, 0.18);
+  --col-text: #f0ede1; /* Pantone 7527 C */
+  --col-text-muted: rgba(240, 237, 225, 0.75);
+  --col-accent: #f7e5c8;
+  --col-secondary: #e8d9c0;
+  --col-border: rgba(240, 237, 225, 0.18);
+  --col-spec-bg: #2b160c;
+  --col-spec-text: #f0ede1;
+  --col-logo-filter: brightness(0) invert(1);
+}
