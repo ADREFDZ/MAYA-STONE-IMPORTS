@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import AdminLayout from "@/components/admin/AdminLayout";
 import LeadsManagerClient from "./LeadsManagerClient";
+import { toTitleCase } from "@/lib/utils/strings";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,20 @@ export default async function LeadsAdminPage({ params }: Props) {
   const lang = resolvedParams.lang;
   const supabase = await createClient();
 
-  const { data: leads, error } = await supabase
-    .from("contact_leads")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data: leads, error }, { data: collections }] = await Promise.all([
+    supabase
+      .from("contact_leads")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    // Para mostrar el nombre de la colección elegida en "Línea de interés"
+    supabase.from("collections").select("slug, title_es"),
+  ]);
+
+  const collectionLabels: Record<string, string> = Object.fromEntries(
+    (collections || [])
+      .filter((c) => c.slug)
+      .map((c) => [c.slug as string, toTitleCase(c.title_es || c.slug)]),
+  );
 
   if (error) {
     console.error("Error al obtener las solicitudes:", error.message);
@@ -38,7 +49,10 @@ export default async function LeadsAdminPage({ params }: Props) {
           </p>
         </div>
 
-        <LeadsManagerClient initialLeads={leads || []} />
+        <LeadsManagerClient
+          initialLeads={leads || []}
+          collectionLabels={collectionLabels}
+        />
       </div>
     </AdminLayout>
   );

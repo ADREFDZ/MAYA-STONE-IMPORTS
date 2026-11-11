@@ -16,7 +16,7 @@ export const BRANCHES: Branch[] = [
     city: "León, Gto.",
     address:
       "Blvrd Francisco Villa 4602-Bodega A4, Leon I, 37235 León de los Aldama, Gto.",
-    phone: "+52 477 854 4033",
+    phone: "+52 477 704 0874",
     hours: "Lun - Vie: 9:00 - 17:00",
     // Para obtener la URL embed de Google Maps: En Google Maps -> Compartir -> Insertar un mapa -> Copiar solo el atributo src
     googleMapsEmbedUrl:

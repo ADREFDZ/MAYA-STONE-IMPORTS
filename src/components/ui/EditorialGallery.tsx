@@ -10,15 +10,34 @@ interface EditorialGalleryProps {
   folder?: string;
 }
 
-// Patrón proporcionado: 1 elemento completo en móvil, grilla equilibrada en desktop
-const GALLERY_PATTERNS = [
-  "lg:aspect-16/10",
-  "lg:aspect-4/3",
-  "lg:aspect-square",
-  "lg:aspect-square",
-  "lg:aspect-4/3",
-  "lg:aspect-16/10",
-];
+// =============================================================================
+// DISTRIBUCIÓN SIMÉTRICA (DESKTOP)
+// -----------------------------------------------------------------------------
+// Las fotos se reparten en filas COMPLETAS de 2 o 3, nunca queda una fila a
+// medias. Cada fila tiene todas sus fotos del mismo tamaño:
+//   · Fila de 2 → fotos grandes 3:2 (abren la sección)
+//   · Fila de 3 → fotos 4:3
+// Ej.: 5 fotos = 2 + 3 · 6 = 3 + 3 · 7 = 2 + 2 + 3 · 8 = 2 + 3 + 3
+// Tablet: rejilla de 2 uniforme; si sobra una, ocupa el ancho completo.
+// =============================================================================
+const ROW_CLASSES: Record<1 | 2 | 3, string> = {
+  1: "lg:col-span-6 lg:aspect-21/9",
+  2: "lg:col-span-3 lg:aspect-3/2",
+  3: "lg:col-span-2 lg:aspect-4/3",
+};
+
+function buildRows(total: number): (1 | 2 | 3)[] {
+  if (total <= 0) return [];
+  if (total === 1) return [1];
+  const rows: (1 | 2 | 3)[] = [];
+  const remainder = total % 3;
+  const pairs = remainder === 0 ? 0 : remainder === 2 ? 1 : 2;
+  for (let i = 0; i < pairs; i++) rows.push(2);
+  const triples = (total - pairs * 2) / 3;
+  for (let i = 0; i < triples; i++) rows.push(3);
+  // Tamaño de fila asignado a cada foto, en orden
+  return rows.flatMap((size) => Array(size).fill(size) as (1 | 2 | 3)[]);
+}
 
 export default async function EditorialGallery({
   title,
@@ -80,7 +99,7 @@ export default async function EditorialGallery({
               flex
               sm:grid
               sm:grid-cols-2
-              lg:grid-cols-3
+              lg:grid-cols-6
               overflow-x-auto
               overflow-y-hidden
               sm:overflow-visible
@@ -97,19 +116,25 @@ export default async function EditorialGallery({
               select-none
             "
           >
-            {photos.map((photo, index) => {
-              const desktopAspect =
-                GALLERY_PATTERNS[index % GALLERY_PATTERNS.length];
+            {(() => {
+              const rowSizes = buildRows(photos.length);
+              const isTabletOrphan = photos.length % 2 === 1;
+              return photos.map((photo, index) => {
+              const desktopLayout = ROW_CLASSES[rowSizes[index] ?? 3];
+              const spansTablet =
+                isTabletOrphan && index === photos.length - 1;
               const formattedIdx = String(index + 1).padStart(2, "0");
 
               return (
                 <article
                   key={photo.id}
-                  className="
+                  className={`
                     w-full
                     min-w-full
                     sm:min-w-0
                     sm:w-auto
+                    ${spansTablet ? "sm:col-span-2" : ""}
+                    ${desktopLayout.split(" ")[0]}
                     shrink-0
                     sm:shrink
                     snap-start
@@ -119,7 +144,7 @@ export default async function EditorialGallery({
                     flex-col
                     space-y-2
                     sm:space-y-2.5
-                  "
+                  `}
                 >
                   {/* IMAGEN: aspect-square en móvil para 100% de consistencia, relación equilibrada en desktop */}
                   <div
@@ -127,9 +152,8 @@ export default async function EditorialGallery({
                       relative
                       w-full
                       aspect-square
-                      sm:aspect-4/3
-                      ${desktopAspect}
-                      max-h-[380px]
+                      ${spansTablet ? "sm:aspect-16/9" : "sm:aspect-4/3"}
+                      ${desktopLayout.split(" ")[1]}
                       overflow-hidden
                       rounded-2xs
                       bg-surface-secondary
@@ -143,26 +167,22 @@ export default async function EditorialGallery({
                       alt={photo.title || `Registro visual ${formattedIdx}`}
                       fill
                       priority={index === 0}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      sizes={
+                        rowSizes[index] === 3
+                          ? "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          : "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 50vw"
+                      }
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-103 pointer-events-none"
                     />
 
                     <div className="absolute inset-0 bg-black-pure/15 opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
                   </div>
 
-                  {(photo.title || photo.project_type) && (
-                    <div className="flex items-center justify-between font-mono text-maya-label tracking-data text-text-muted pt-0.5 px-0.5">
-                      <span className="uppercase text-text-primary/80 truncate text-[11px] sm:text-xs">
-                        {photo.title || photo.project_type}
-                      </span>
-                      <span className="text-text-muted/50 pl-2 shrink-0 text-[11px]">
-                        {formattedIdx}
-                      </span>
-                    </div>
-                  )}
+                  {/* Solo la imagen: sin título ni número debajo */}
                 </article>
               );
-            })}
+              });
+            })()}
           </div>
         </div>
       </div>

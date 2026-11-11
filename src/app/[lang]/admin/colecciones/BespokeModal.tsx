@@ -194,15 +194,15 @@ export default function BespokeModal({
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file.type.startsWith("image/")) {
-          const optimizedFile = await convertToWebP(file, 2560, 0.92);
+          const optimizedFile = await convertToWebP(file, { maxBytes: 12 * 1024 * 1024 });
           const fileName = `gallery-${Date.now()}-${Math.random().toString(36).substring(2, 6)}.webp`;
           const filePath = `bespoke/${cleanSlug}/gallery/${fileName}`;
 
           const { error } = await supabase.storage
             .from("materials")
             .upload(filePath, optimizedFile, {
-              contentType: "image/webp",
-              cacheControl: "3600",
+              contentType: optimizedFile.type,
+              cacheControl: "31536000",
               upsert: true,
             });
 
@@ -238,11 +238,7 @@ export default function BespokeModal({
 
     if (pendingCoverFile && slug) {
       try {
-        const optimizedCover = await convertToWebP(
-          pendingCoverFile,
-          2560,
-          0.92,
-        );
+        const optimizedCover = await convertToWebP(pendingCoverFile);
         const formData = new FormData();
         formData.append("file", optimizedCover);
         formData.append("slug", slug);

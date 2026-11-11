@@ -15,18 +15,14 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const isEs = lang === "es";
   const currentSlug = ROUTES.terminos[lang];
   const dict = await getDictionary(lang);
 
   return {
     // Sin " | MAYA" al final para evitar duplicación
     title:
-      dict.terms_page?.title ||
-      (isEs ? "Términos y Condiciones de Uso" : "Terms & Conditions of Use"),
-    description: isEs
-      ? "Términos y condiciones aplicables al acceso, navegación y uso del sitio web de MAYA Stone Imports."
-      : "Terms and conditions governing the access, navigation, and use of the MAYA Stone Imports website.",
+      dict.terms_page?.title,
+    description: dict.seo.terms.description,
     alternates: {
       canonical: `${SITE_URL}/${currentSlug}`,
       languages: {
@@ -44,7 +40,6 @@ export default async function TermsPage({ params }: Props) {
   const currentLocale: Locale = lang === "en" ? "en" : "es";
   const dict = await getDictionary(currentLocale);
   const tDict = dict.terms_page;
-  const isEs = currentLocale === "es";
 
   const sections: Array<{ title: string; content: string }> =
     tDict?.sections || [];
@@ -54,13 +49,10 @@ export default async function TermsPage({ params }: Props) {
       <div className="editorial-container space-y-10 sm:space-y-14 max-w-4xl">
         <header className="border-b border-border-light pb-6 sm:pb-8 space-y-3">
           <SectionLabel variant="minimal" theme="accent">
-            {tDict?.meta || (isEs ? "MARCO LEGAL" : "LEGAL FRAMEWORK")}
+            {tDict?.meta}
           </SectionLabel>
           <h1 className="font-sans font-light tracking-editorial text-maya-h1 sm:text-maya-display uppercase text-black-neutral">
-            {tDict?.title ||
-              (isEs
-                ? "Términos y Condiciones de Uso"
-                : "Terms & Conditions of Use")}
+            {tDict?.title}
           </h1>
           <p className="font-mono text-maya-label uppercase tracking-data text-black-neutral/50">
             {tDict?.last_updated}
@@ -86,8 +78,7 @@ export default async function TermsPage({ params }: Props) {
         <div className="border-t border-border-light pt-6">
           <BackButton
             label={
-              tDict?.back_button ||
-              (isEs ? "Volver a la página anterior" : "Go back")
+              tDict?.back_button
             }
           />
         </div>

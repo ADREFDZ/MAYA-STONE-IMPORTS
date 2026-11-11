@@ -57,13 +57,16 @@ export default function GalleryUploader({
     setMessage(null);
 
     try {
-      const compressedFile = await convertToWebP(file, 2560, 0.92);
+      const compressedFile = await convertToWebP(file, { maxBytes: 12 * 1024 * 1024 });
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.webp`;
       const storagePath = `${folder}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("editorial_gallery")
-        .upload(storagePath, compressedFile, { contentType: "image/webp" });
+        .upload(storagePath, compressedFile, {
+          contentType: compressedFile.type,
+          cacheControl: "31536000",
+        });
 
       if (uploadError) throw uploadError;
 

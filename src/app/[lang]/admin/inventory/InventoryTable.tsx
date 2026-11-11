@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { autoTranslateAction } from "@/app/[lang]/admin/actions/translate";
 import FullscreenModal from "@/components/admin/FullscreenModal";
 import {
   createProductAction,
   updateProductAction,
+  deleteProductAction,
   uploadMaterialImageAction,
   deleteMaterialImageAction,
   uploadMaterialRenderAction,
   deleteMaterialRenderAction,
   RenderItem,
 } from "./actions";
+import { convertToWebP } from "@/lib/utils/media";
 
 interface Product {
   id?: string;
@@ -34,64 +36,9 @@ interface Product {
   uses?: string[];
   uses_en?: string[];
   material_renders?: RenderItem[];
+  collections?: { slug: string; title: string }[];
 }
 
-async function convertToWebP(
-  file: File,
-  maxWidth = 2560,
-  quality = 0.92,
-): Promise<File> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          reject(new Error("No se pudo obtener el contexto del canvas."));
-          return;
-        }
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error("Error al generar el Blob WebP."));
-              return;
-            }
-            const webpFile = new File(
-              [blob],
-              file.name.replace(/\.[^/.]+$/, "") + ".webp",
-              { type: "image/webp" },
-            );
-            resolve(webpFile);
-          },
-          "image/webp",
-          quality,
-        );
-      };
-      img.onerror = (err) => reject(err);
-    };
-    reader.onerror = (err) => reject(err);
-  });
-}
 
 export default function InventoryTable({
   initialProducts,
@@ -149,23 +96,133 @@ export default function InventoryTable({
 
   const isWood = formData.category === "Natural Wood";
 
-  const filteredProducts = initialProducts.filter((p) => {
-    const matchesSearch =
-      p.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.stone_type &&
-        p.stone_type.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (p.description &&
-        p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (p.description_en &&
-        p.description_en.toLowerCase().includes(searchTerm.toLowerCase()));
+  // ─── Filtros del inventario ───
+  const [collectionFilter, setCollectionFilter] = useState("all");
+  const [stoneFilter, setStoneFilter] = useState("all");
+  const [originFilter, setOriginFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [contentFilter, setContentFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"recent" | "name" | "sku">("recent");
+  const [expandedSku, setExpandedSku] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-    const matchesCategory =
-      categoryFilter === "all" || p.category === categoryFilter;
+  const uniqSorted = (list: (string | null | undefined)[]) =>
+    [...new Set(list.map((v) => (v || "").trim()).filter((v) => v && v !== "-"))].sort(
+      (a, b) => a.localeCompare(b, "es"),
+    );
 
-    return matchesSearch && matchesCategory;
-  });
+  const collectionOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of initialProducts)
+      for (const c of p.collections || []) map.set(c.slug, c.title);
+    return [...map.entries()]
+      .map(([slug, title]) => ({ slug, title }))
+      .sort((a, b) => a.title.localeCompare(b.title, "es"));
+  }, [initialProducts]);
+  const stoneOptions = useMemo(
+    () => uniqSorted(initialProducts.map((p) => p.stone_type)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [initialProducts],
+  );
+  const originOptions = useMemo(
+    () => uniqSorted(initialProducts.map((p) => p.origin)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [initialProducts],
+  );
+
+  const activeFilterCount = [
+    collectionFilter,
+    categoryFilter,
+    stoneFilter,
+    originFilter,
+    statusFilter,
+    contentFilter,
+  ].filter((v) => v !== "all").length;
+
+  function clearFilters() {
+    setCollectionFilter("all");
+    setCategoryFilter("all");
+    setStoneFilter("all");
+    setOriginFilter("all");
+    setStatusFilter("all");
+    setContentFilter("all");
+    setSearchTerm("");
+  }
+
+  const norm = (v: string) =>
+    v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const visibleProducts = useMemo(() => {
+    const q = norm(searchTerm.trim());
+    const list = initialProducts.filter((p) => {
+      if (q) {
+        const hay = norm(
+          [
+            p.product_name,
+            p.aka,
+            p.sku,
+            p.stone_type,
+            p.origin,
+            p.category,
+            ...(p.finishes || []),
+            ...(p.collections || []).map((c) => c.title),
+          ]
+            .filter(Boolean)
+            .join(" "),
+        );
+        if (!hay.includes(q)) return false;
+      }
+      if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
+      if (stoneFilter !== "all" && (p.stone_type || "").trim() !== stoneFilter) return false;
+      if (originFilter !== "all" && (p.origin || "").trim() !== originFilter) return false;
+      if (statusFilter === "active" && p.status !== "active") return false;
+      if (statusFilter === "inactive" && p.status === "active") return false;
+      if (collectionFilter === "none" && (p.collections || []).length > 0) return false;
+      if (
+        collectionFilter !== "all" &&
+        collectionFilter !== "none" &&
+        !(p.collections || []).some((c) => c.slug === collectionFilter)
+      )
+        return false;
+      if (contentFilter === "no_image" && p.image_url) return false;
+      if (contentFilter === "no_desc" && (p.description || "").trim()) return false;
+      if (contentFilter === "no_en" && (p.description_en || "").trim()) return false;
+      if (contentFilter === "no_renders" && (p.material_renders?.length || 0) > 0) return false;
+      return true;
+    });
+    if (sortBy === "name")
+      list.sort((a, b) => (a.aka || a.product_name).localeCompare(b.aka || b.product_name, "es"));
+    if (sortBy === "sku") list.sort((a, b) => a.sku.localeCompare(b.sku));
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    initialProducts,
+    searchTerm,
+    categoryFilter,
+    stoneFilter,
+    originFilter,
+    statusFilter,
+    collectionFilter,
+    contentFilter,
+    sortBy,
+  ]);
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const res = await deleteProductAction(deleteTarget.sku);
+    setDeleting(false);
+    if (!res.success) {
+      setDeleteError(res.error || "No se pudo eliminar.");
+      return;
+    }
+    setDeleteTarget(null);
+    setExpandedSku(null);
+    router.refresh();
+  }
 
   function resetImageStates() {
     setPendingImageFile(null);
@@ -394,7 +451,7 @@ export default function InventoryTable({
 
     setUploadingRender(true);
     try {
-      const optimized = await convertToWebP(renderFile, 2560, 0.92);
+      const optimized = await convertToWebP(renderFile);
       const data = new FormData();
       data.append("file", optimized);
       data.append("sku", targetSku.trim());
@@ -448,7 +505,7 @@ export default function InventoryTable({
 
     if (pendingImageFile && formData.sku) {
       try {
-        const optimizedFile = await convertToWebP(pendingImageFile, 2560, 0.92);
+        const optimizedFile = await convertToWebP(pendingImageFile);
 
         const data = new FormData();
         data.append("file", optimizedFile);
@@ -508,176 +565,322 @@ export default function InventoryTable({
 
   return (
     <div className="space-y-4 font-sans">
-      {/* ─── FILTROS Y BÚSQUEDA ─── */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-        <div className="flex flex-col sm:flex-row gap-2 flex-1 max-w-xl">
+      {/* ─── BARRA DE BÚSQUEDA Y FILTROS ─── */}
+      <div className="space-y-3">
+        <div className="flex flex-col md:flex-row gap-2.5 md:items-center">
           <div className="relative flex-1">
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 stroke-current text-text-muted" fill="none" strokeWidth="1.5">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" />
+            </svg>
             <input
-              type="text"
-              placeholder="Buscar por SKU, material, especie o tipo..."
+              type="search"
+              placeholder="Buscar por nombre, SKU, piedra, origen o acabado…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-maya-body border border-accent/25 rounded-3xs bg-accent-soft text-black-neutral placeholder:text-black-neutral/40 focus:outline-none focus:border-accent font-sans"
+              aria-label="Buscar materiales"
+              className="w-full pl-9 pr-3.5 py-2.5 text-maya-small border border-border-light bg-surface-secondary/60 text-black-neutral placeholder:text-black-neutral/40 focus:outline-none focus:border-black-neutral"
             />
           </div>
-
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3.5 py-2.5 text-maya-small border border-accent/25 rounded-3xs bg-accent-soft text-black-neutral font-mono focus:outline-none focus:border-accent cursor-pointer shrink-0"
-          >
-            <option value="all">Todas las líneas</option>
-            <option value="Natural Stone">
-              Piedra Natural (Natural Stone)
-            </option>
-            <option value="Natural Wood">
-              Madera de Ingeniería (Natural Wood)
-            </option>
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              aria-label="Ordenar"
+              className="px-3 py-2.5 text-maya-small border border-border-light bg-surface-secondary/60 cursor-pointer select-chevron"
+            >
+              <option value="recent">Más recientes</option>
+              <option value="name">Nombre (A–Z)</option>
+              <option value="sku">SKU</option>
+            </select>
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="px-4 py-2.5 bg-black-neutral text-gray-warm text-maya-small hover:bg-black-pure transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+            >
+              + Agregar material
+            </button>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="px-4 py-2.5 bg-black-neutral text-gray-warm font-mono text-maya-label uppercase tracking-data rounded-3xs hover:bg-black-pure transition-colors cursor-pointer shrink-0 shadow-xs"
-        >
-          + Agregar Material
-        </button>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+          {[
+            {
+              label: "Colección",
+              value: collectionFilter,
+              set: setCollectionFilter,
+              options: [
+                ["all", "Todas"],
+                ["none", "Sin colección"],
+                ...collectionOptions.map((c) => [c.slug, c.title]),
+              ],
+            },
+            {
+              label: "Línea",
+              value: categoryFilter,
+              set: setCategoryFilter,
+              options: [
+                ["all", "Todas"],
+                ["Natural Stone", "Piedra natural"],
+                ["Natural Wood", "Madera"],
+              ],
+            },
+            {
+              label: "Tipo de piedra",
+              value: stoneFilter,
+              set: setStoneFilter,
+              options: [["all", "Todos"], ...stoneOptions.map((v) => [v, v])],
+            },
+            {
+              label: "Origen",
+              value: originFilter,
+              set: setOriginFilter,
+              options: [["all", "Todos"], ...originOptions.map((v) => [v, v])],
+            },
+            {
+              label: "Estado",
+              value: statusFilter,
+              set: setStatusFilter,
+              options: [
+                ["all", "Todos"],
+                ["active", "Visibles en la web"],
+                ["inactive", "Ocultos"],
+              ],
+            },
+            {
+              label: "Contenido",
+              value: contentFilter,
+              set: setContentFilter,
+              options: [
+                ["all", "Todo"],
+                ["no_image", "Sin foto"],
+                ["no_desc", "Sin descripción"],
+                ["no_en", "Sin descripción en inglés"],
+                ["no_renders", "Sin renders"],
+              ],
+            },
+          ].map((f) => (
+            <label key={f.label} className="flex flex-col gap-1">
+              <span className="text-[11px] text-text-muted">{f.label}</span>
+              <select
+                value={f.value}
+                onChange={(e) => f.set(e.target.value)}
+                className={`px-2.5 py-2 text-maya-small border bg-surface-secondary/60 cursor-pointer select-chevron ${
+                  f.value !== "all" ? "border-black-neutral" : "border-border-light"
+                }`}
+              >
+                {f.options.map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 text-maya-small text-text-secondary">
+          <span>
+            {visibleProducts.length} de {initialProducts.length} materiales
+          </span>
+          {activeFilterCount > 0 && (
+            <button type="button" onClick={clearFilters} className="underline underline-offset-2 hover:text-black-neutral cursor-pointer">
+              Limpiar filtros ({activeFilterCount})
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* ─── TABLA ADAPTATIVA ─── */}
-      <div className="overflow-x-auto border border-border-light rounded-2xs bg-surface shadow-2xs">
-        <table className="w-full text-left border-collapse font-sans text-maya-small min-w-[760px]">
+      {/* ─── LISTA DE MATERIALES ─── */}
+      <div className="border border-border-light bg-surface overflow-x-auto">
+        <table className="w-full text-left border-collapse text-maya-small min-w-[880px]">
           <thead>
-            <tr className="bg-surface border-b border-border-light font-mono text-maya-label tracking-data uppercase text-black-neutral/70 font-semibold">
-              <th className="p-3.5">Muestra</th>
-              <th className="p-3.5">SKU</th>
-              <th className="p-3.5">Nombre & Subtítulo</th>
-              <th className="p-3.5">Línea & Especie</th>
-              <th className="p-3.5">Grado / Espesor</th>
-              <th className="p-3.5">Medidas / Formato</th>
-              <th className="p-3.5 text-center">Estado</th>
-              <th className="p-3.5 text-right">Acciones</th>
+            <tr className="border-b border-border-light text-[11px] text-text-muted">
+              <th className="px-3 py-2.5 w-8"><span className="sr-only">Detalle</span></th>
+              <th className="px-3 py-2.5 font-normal">Material</th>
+              <th className="px-3 py-2.5 font-normal">Colección</th>
+              <th className="px-3 py-2.5 font-normal">Tipo · Origen</th>
+              <th className="px-3 py-2.5 font-normal">Acabados</th>
+              <th className="px-3 py-2.5 font-normal">Formatos</th>
+              <th className="px-3 py-2.5 font-normal">Estado</th>
+              <th className="px-3 py-2.5 font-normal text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-light">
-            {filteredProducts.length === 0 ? (
+          <tbody>
+            {visibleProducts.length === 0 ? (
               <tr>
-                <td
-                  colSpan={8}
-                  className="p-8 text-center text-black-neutral/40 font-mono text-maya-small italic"
-                >
-                  {searchTerm || categoryFilter !== "all"
-                    ? "No se encontraron materiales con esos criterios de búsqueda."
-                    : "No hay materiales registrados en el inventario."}
+                <td colSpan={8} className="p-10 text-center text-text-secondary">
+                  {activeFilterCount > 0 || searchTerm
+                    ? "Ningún material coincide con la búsqueda o los filtros."
+                    : "Aún no hay materiales. Usa “Agregar material”."}
                 </td>
               </tr>
             ) : (
-              filteredProducts.map((p) => {
-                const isItemWood = p.category === "Natural Wood";
+              visibleProducts.map((p) => {
+                const open = expandedSku === p.sku;
+                const missingEn = !(p.description_en || "").trim();
+                const renders = p.material_renders?.length || 0;
+                const more = (list: string[] | undefined, n: number) =>
+                  (list?.length || 0) > n ? ` +${(list?.length || 0) - n}` : "";
                 return (
-                  <tr
-                    key={p.sku}
-                    className="hover:bg-accent-soft/30 transition-colors"
-                  >
-                    <td className="p-3.5">
-                      <div className="w-12 h-12 rounded-3xs bg-surface border border-border-light overflow-hidden relative flex items-center justify-center shadow-2xs">
-                        {p.image_url ? (
-                          <img
-                            src={p.image_url}
-                            alt={p.product_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="font-mono text-maya-label text-black-neutral/40 text-center select-none">
-                            Sin Foto
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-3.5 font-mono text-maya-small text-accent-ink font-bold">
-                      {p.sku}
-                    </td>
-                    <td className="p-3.5">
-                      <div className="font-medium text-black-neutral">
-                        {p.product_name}
-                      </div>
-                      {p.aka && (
-                        <div className="text-maya-label text-black-neutral/50 font-mono">
-                          AKA: {p.aka}
+                  <Fragment key={p.sku}>
+                    <tr
+                      className={`border-b border-border-light align-middle transition-colors ${
+                        open ? "bg-accent-soft/40" : "hover:bg-accent-soft/25"
+                      } ${p.status !== "active" ? "text-black-neutral/55" : ""}`}
+                    >
+                      <td className="px-3 py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedSku(open ? null : p.sku)}
+                          aria-expanded={open}
+                          aria-label={open ? "Ocultar detalle" : "Ver detalle"}
+                          className="h-7 w-7 flex items-center justify-center border border-border-light hover:border-black-neutral cursor-pointer"
+                        >
+                          <span aria-hidden="true" className={`text-[10px] transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
+                        </button>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-3 min-w-[220px]">
+                          <div className="w-11 h-11 shrink-0 bg-surface-secondary border border-border-light overflow-hidden flex items-center justify-center">
+                            {p.image_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.image_url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[9px] text-red-800 text-center leading-tight">Sin<br />foto</span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-black-neutral truncate max-w-[240px]">{p.aka || p.product_name}</p>
+                            <p className="text-[11px] text-text-muted font-mono tabular-nums">{p.sku}</p>
+                          </div>
                         </div>
-                      )}
-                    </td>
-
-                    <td className="p-3.5">
-                      <div className="inline-block px-1.5 py-0.5 rounded-3xs font-mono text-[9px] uppercase font-bold border mb-1 bg-surface-secondary border-border-light text-black-neutral/80">
-                        {isItemWood ? "Madera" : "Piedra"}
-                      </div>
-                      <div className="text-maya-label font-mono text-black-neutral/70">
-                        {p.stone_type || "-"}
-                      </div>
-                    </td>
-
-                    <td className="p-3.5">
-                      <div className="font-medium text-black-neutral">
-                        {isItemWood
-                          ? `Grado: ${p.type || "-"}`
-                          : p.type || "SLAB"}
-                      </div>
-                      <div className="text-maya-label font-mono text-black-neutral/50">
-                        {isItemWood
-                          ? `Espesor: ${p.kind || "-"}`
-                          : p.kind || "Stock"}
-                      </div>
-                    </td>
-
-                    <td className="p-3.5">
-                      <div className="flex flex-wrap gap-1 max-w-[160px]">
-                        {p.formats && p.formats.length > 0 ? (
-                          p.formats.map((fmt, idx) => (
-                            <span
-                              key={idx}
-                              className="px-1.5 py-0.5 text-maya-label font-mono bg-surface border border-border-light text-black-neutral/80 rounded-3xs"
-                            >
-                              {fmt}
-                            </span>
-                          ))
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {p.collections && p.collections.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 max-w-[180px]">
+                            {p.collections.map((c) => (
+                              <span key={c.slug} className="px-1.5 py-0.5 text-[11px] border border-border-light bg-surface-secondary/60">
+                                {c.title}
+                              </span>
+                            ))}
+                          </div>
                         ) : (
-                          <span className="text-maya-label text-black-neutral/40 font-mono">
-                            -
-                          </span>
+                          <span className="text-[11px] text-text-muted">—</span>
                         )}
-                      </div>
-                    </td>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <p>{p.stone_type || (p.category === "Natural Wood" ? "Madera" : "—")}</p>
+                        <p className="text-[11px] text-text-muted">{p.origin && p.origin !== "-" ? p.origin : "—"}</p>
+                      </td>
+                      <td className="px-3 py-2.5 text-[12px] max-w-[200px]">
+                        {(p.finishes || []).slice(0, 2).join(", ") || "—"}
+                        <span className="text-text-muted">{more(p.finishes, 2)}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-[12px] max-w-[180px]">
+                        {(p.formats || []).slice(0, 2).join(", ") || "—"}
+                        <span className="text-text-muted">{more(p.formats, 2)}</span>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1.5 text-[12px] ${p.status === "active" ? "text-emerald-800" : "text-text-muted"}`}>
+                          <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${p.status === "active" ? "bg-emerald-600" : "bg-black-neutral/30"}`} />
+                          {p.status === "active" ? "Visible" : "Oculto"}
+                        </span>
+                        {(missingEn || !p.image_url) && (
+                          <p className="text-[11px] text-amber-800 mt-0.5">
+                            {[!p.image_url && "sin foto", missingEn && "sin inglés"].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(p)}
+                          className="px-3 py-1.5 text-[12px] border border-border-light hover:border-black-neutral cursor-pointer"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(p)}
+                          aria-label={`Eliminar ${p.aka || p.product_name}`}
+                          className="ml-1.5 px-2.5 py-1.5 text-[12px] border border-border-light text-red-800 hover:border-red-800 hover:bg-red-50 cursor-pointer"
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
 
-                    <td className="p-3.5 text-center">
-                      <span
-                        className={`inline-block px-2 py-0.5 font-mono text-[9px] uppercase rounded-3xs border font-bold ${
-                          p.status === "active"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                            : "bg-red-50 text-red-700 border-red-200"
-                        }`}
-                      >
-                        {p.status === "active" ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-
-                    <td className="p-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(p)}
-                        className="px-3 py-1.5 text-black-neutral bg-surface hover:bg-surface-secondary border border-border-light hover:border-black-neutral font-mono text-maya-label uppercase tracking-data rounded-3xs transition-colors cursor-pointer"
-                      >
-                        Editar
-                      </button>
-                    </td>
-                  </tr>
+                    {open && (
+                      <tr className="border-b border-border-light bg-accent-soft/20">
+                        <td />
+                        <td colSpan={7} className="px-3 py-4">
+                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                            <div className="lg:col-span-5 space-y-2">
+                              <p className="text-[11px] text-text-muted">Descripción</p>
+                              <p className="text-[13px] leading-relaxed text-black-neutral/85 line-clamp-6">
+                                {p.description || "Sin descripción."}
+                              </p>
+                              <p className={`text-[12px] ${missingEn ? "text-amber-800" : "text-text-secondary"}`}>
+                                Inglés: {missingEn ? "falta traducción" : "listo"}
+                              </p>
+                            </div>
+                            <dl className="lg:col-span-7 grid grid-cols-[7rem_1fr] gap-x-4 gap-y-2 text-[13px]">
+                              <dt className="text-text-muted">Nombre completo</dt>
+                              <dd>{p.product_name}</dd>
+                              <dt className="text-text-muted">Tipo / stock</dt>
+                              <dd>{[p.type, p.kind].filter(Boolean).join(" · ") || "—"}</dd>
+                              <dt className="text-text-muted">Acabados</dt>
+                              <dd>{(p.finishes || []).join(", ") || "—"}</dd>
+                              <dt className="text-text-muted">Formatos</dt>
+                              <dd>{(p.formats || []).join(", ") || "—"}</dd>
+                              <dt className="text-text-muted">Usos</dt>
+                              <dd>{(p.uses || []).join(", ") || "—"}</dd>
+                              <dt className="text-text-muted">Renders</dt>
+                              <dd>{renders > 0 ? `${renders} imagen${renders > 1 ? "es" : ""}` : "Sin renders"}</dd>
+                            </dl>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })
             )}
           </tbody>
         </table>
       </div>
+
+      {/* ─── CONFIRMAR ELIMINACIÓN ─── */}
+      {deleteTarget && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-title"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black-neutral/60 p-4"
+          onClick={() => !deleting && setDeleteTarget(null)}
+        >
+          <div className="w-full max-w-md bg-background border border-border-light p-6 space-y-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 id="delete-title" className="text-maya-h4 font-light uppercase tracking-editorial">
+              Eliminar {deleteTarget.aka || deleteTarget.product_name}
+            </h3>
+            <p className="text-maya-small text-text-secondary leading-relaxed">
+              Se borrará el material <span className="font-mono">{deleteTarget.sku}</span>, sus renders
+              y su lugar en {deleteTarget.collections?.length ? `la colección ${deleteTarget.collections.map((c) => c.title).join(", ")}` : "las colecciones"}.
+              No se puede deshacer. Si solo quieres quitarlo de la web, edítalo y márcalo como oculto.
+            </p>
+            {deleteError && <p className="text-[12px] text-red-800">{deleteError}</p>}
+            <div className="flex justify-end gap-2">
+              <button type="button" disabled={deleting} onClick={() => setDeleteTarget(null)} className="px-4 py-2 text-maya-small border border-border-light hover:border-black-neutral cursor-pointer">
+                Cancelar
+              </button>
+              <button type="button" disabled={deleting} onClick={handleConfirmDelete} className="px-4 py-2 text-maya-small bg-red-800 text-white hover:bg-red-900 disabled:opacity-60 cursor-pointer">
+                {deleting ? "Eliminando…" : "Eliminar material"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── MODAL INTEGRADO ─── */}
       <FullscreenModal
@@ -1391,7 +1594,7 @@ export default function InventoryTable({
                     Subir Render de Aplicación (Optimización WebP Automática)
                   </h3>
                   <p className="font-mono text-maya-label text-black-neutral/50">
-                    Se escalan a máx. 2560px, comprimen a WebP y se alojan en el
+                    Se guardan en alta calidad (hasta 4096 px) y se alojan en el
                     bucket de materiales bajo este SKU:{" "}
                     <span className="font-bold text-accent-ink">
                       {editingProduct?.sku || formData.sku}

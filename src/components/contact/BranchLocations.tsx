@@ -25,8 +25,9 @@ export default function BranchLocations({
 
   return (
     <div className={`space-y-6 sm:space-y-8 font-sans ${className}`}>
-      {/* 1. SELECTOR DE SUCURSAL: DESLIZABLE EN MÓVIL SIN OVERFLOW */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 border-b border-border-light w-full">
+      {/* 1. SELECTOR DE SUCURSAL: todas visibles, nunca cortadas
+          (2 columnas en celular; en fila desde sm, saltando de línea si no caben) */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center pb-3 border-b border-border-light w-full">
         {BRANCHES.map((branch) => {
           const isActive = selectedBranch.id === branch.id;
           return (
@@ -34,7 +35,8 @@ export default function BranchLocations({
               key={branch.id}
               type="button"
               onClick={() => setSelectedBranch(branch)}
-              className={`px-3.5 py-1.5 text-left font-mono text-maya-label uppercase tracking-data transition-all duration-300 cursor-pointer rounded-3xs shrink-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent ${
+              aria-pressed={isActive}
+              className={`min-h-11 sm:min-h-0 px-3 sm:px-3.5 py-2 sm:py-1.5 text-center sm:text-left leading-tight font-mono text-maya-label uppercase tracking-data transition-all duration-300 cursor-pointer rounded-3xs focus:outline-none focus-visible:ring-1 focus-visible:ring-accent ${
                 isActive
                   ? "bg-black-neutral text-gray-warm font-semibold shadow-xs"
                   : "bg-surface text-black-neutral/70 hover:text-black-neutral hover:border-black-neutral/40 border border-border-light"
@@ -102,7 +104,7 @@ export default function BranchLocations({
         </div>
 
         {/* MAPA EMBEBIDO CON PROPORCIÓN RESPONSIVE SEGURA */}
-        <div className="lg:col-span-7 relative aspect-4/3 sm:aspect-16/10 lg:aspect-auto min-h-[260px] sm:min-h-[340px] lg:min-h-[420px] rounded-2xs overflow-hidden border border-border-light bg-black-neutral/5 shadow-xs">
+        <div className="lg:col-span-7 relative w-full aspect-4/3 sm:aspect-16/10 lg:aspect-auto lg:min-h-[420px] rounded-2xs overflow-hidden border border-border-light bg-black-neutral/5 shadow-xs">
           <iframe
             key={selectedBranch.id}
             src={selectedBranch.googleMapsEmbedUrl}

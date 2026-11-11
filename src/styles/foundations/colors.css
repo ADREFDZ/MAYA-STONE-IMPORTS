@@ -24,6 +24,27 @@
   --raw-accent-bronze: #8c7355;
   --raw-accent-bronze-ink-dark: #5f4d38; /* sobre fondos claros: 5.4:1 */
   --raw-accent-bronze-ink-light: #b39a78; /* sobre fondos oscuros: 5.7:1 */
+
+  /* ---- Paleta de colección por defecto (MAYA Neutral Black) ----
+     La usa cualquier colección nueva que aún no tenga tema propio. */
+  --col-bg: var(--raw-black-neutral);
+  --col-surface: #2e2e2e;
+  --col-card-bg: #1f1f1f;
+  --col-card-border: rgba(215, 210, 203, 0.14);
+  --col-text: var(--raw-gray-warm);
+  --col-text-muted: rgba(215, 210, 203, 0.72);
+  --col-accent: var(--raw-gray-warm);
+  --col-on-accent: var(--raw-black-neutral);
+  --col-secondary: #a8a39c;
+  --col-border: rgba(215, 210, 203, 0.14);
+  --col-media-border: rgba(215, 210, 203, 0.12);
+  --col-hover: rgba(215, 210, 203, 0.04);
+  --col-spec-bg: #1a1a1a;
+  --col-spec-text: var(--raw-gray-warm);
+  --col-spec-muted: rgba(215, 210, 203, 0.62); /* ≥4.5:1 sobre el fondo por defecto */
+  --col-spec-accent: var(--raw-gray-warm);
+  --col-spec-border: rgba(215, 210, 203, 0.12);
+  --col-logo-filter: brightness(0) invert(1);
 }
 
 @theme static {
@@ -62,6 +83,47 @@
 }
 
 /* =========================================================================
+   UTILIDADES DE COLECCIÓN (leen la paleta activa)
+   -------------------------------------------------------------------------
+   `inline`: la utilidad apunta a la variable, así toma el valor del tema
+   (.theme-collection-*) más cercano en el DOM.
+     bg-col-bg · text-col-text · text-col-muted · text-col-accent ·
+     bg-col-accent · text-col-on-accent · border-col-border · …
+     bg-spec-bg · text-spec-text · text-spec-muted · text-spec-accent · …
+   ========================================================================= */
+@theme inline {
+  --color-col-bg: var(--col-bg);
+  --color-col-surface: var(--col-surface);
+  --color-col-card: var(--col-card-bg);
+  --color-col-card-border: var(--col-card-border);
+  --color-col-text: var(--col-text);
+  --color-col-muted: var(--col-text-muted);
+  --color-col-accent: var(--col-accent);
+  --color-col-on-accent: var(--col-on-accent);
+  --color-col-secondary: var(--col-secondary);
+  --color-col-border: var(--col-border);
+  --color-col-media: var(--col-media-border);
+  --color-col-hover: var(--col-hover);
+  --color-spec-bg: var(--col-spec-bg);
+  --color-spec-text: var(--col-spec-text);
+  --color-spec-muted: var(--col-spec-muted);
+  --color-spec-accent: var(--col-spec-accent);
+  --color-spec-border: var(--col-spec-border);
+}
+
+/* Superficie de colección: fondo + texto de la paleta activa.
+   Uso: <section class="theme-collection-essentials collection-surface"> */
+@utility collection-surface {
+  background-color: var(--col-bg);
+  color: var(--col-text);
+}
+
+/* Isotipo/logotipo en el color correcto para el fondo de la colección */
+@utility col-logo {
+  filter: var(--col-logo-filter);
+}
+
+/* =========================================================================
    CONTEXTO OSCURO → bronce de texto claro
    Cualquier elemento dentro de un contenedor oscuro hereda el tono claro, sin
    tener que cambiar clases en cada componente.
@@ -71,16 +133,21 @@
     body > footer,
     .section-dark,
     .section-dark-pure,
+    .surface-dark,
     .theme-collection-essentials,
     .theme-collection-reserve,
     .theme-collection-dune,
     .theme-collection-dune-ivory,
     [class~="bg-black-neutral"],
+    [class~="bg-black-neutral/80"],
     [class~="bg-black-neutral/85"],
     [class~="bg-black-neutral/90"],
     [class~="bg-black-neutral/95"],
     [class~="bg-black-neutral/98"],
     [class~="bg-black-pure"],
+    [class~="bg-black-pure/50"],
+    [class~="bg-black-pure/60"],
+    [class~="bg-black-pure/70"],
     [class~="bg-black-pure/80"],
     [class~="bg-black-pure/85"],
     [class~="bg-black-pure/90"],
@@ -90,73 +157,124 @@
   --color-accent-ink: var(--raw-accent-bronze-ink-light);
 }
 
+/* Header en modo sólido (claro): el bronce de texto vuelve al tono oscuro */
+body > header.header-light {
+  --color-accent-ink: var(--raw-accent-bronze-ink-dark);
+}
+
 /* =========================================================================
    PALETAS TEMÁTICAS EDITORIALES POR COLECCIÓN (Manual MAYA)
    ========================================================================= */
 
-/* 1. ESSENTIALS */
+/*
+ * Cada tema define:
+ *   --col-bg / --col-surface        Fondo de la sección y superficie elevada
+ *   --col-card-bg / --col-card-border  Tarjetas de material
+ *   --col-text / --col-text-muted   Texto principal y secundario
+ *   --col-accent / --col-on-accent  Acento de la colección y texto encima
+ *   --col-secondary                 Tagline / detalles
+ *   --col-border                    Líneas divisorias
+ *   --col-media-border              Marco fino de fotos y videos
+ *   --col-hover                     Velo sutil en hover de tarjetas
+ *   --col-spec-*                    Ficha técnica y CTA de catálogo (siempre oscuros)
+ *   --col-logo-filter               Color del isotipo según el fondo
+ *
+ * Cómo se usa:
+ *   .theme-collection-<slug>   solo define la paleta (variables).
+ *   .collection-surface        pinta fondo y texto con esa paleta.
+ *   bg-col-* / text-col-* / border-col-* / *-spec-*  utilidades por token.
+ *   Sin tema propio, se aplica la paleta por defecto de :root.
+ */
+
+/* Fondos tomados de las portadas oficiales de cada colección: la portada
+   (foto sobre un campo de color) se funde con la sección sin bordes. */
+
+/* 1. ESSENTIALS — verde gris profundo (portada #303a34) */
 .theme-collection-essentials {
-  --col-bg: #152b21; /* Pantone 5535 XGC */
-  --col-surface: #1e3a2e;
-  --col-card-bg: #102119;
-  --col-card-border: rgba(247, 243, 227, 0.15);
+  --col-bg: #303a34;
+  --col-surface: #3a453f;
+  --col-card-bg: #29322d;
+  --col-card-border: rgba(247, 243, 227, 0.14);
   --col-text: #f7f3e3; /* Pantone 9064 U */
-  --col-text-muted: rgba(247, 243, 227, 0.72);
+  --col-text-muted: rgba(247, 243, 227, 0.74);
   --col-accent: #e5dfc8;
-  --col-secondary: #9b948a; /* Pantone 404 C */
+  --col-on-accent: #303a34;
+  --col-secondary: #a9a69c;
   --col-border: rgba(247, 243, 227, 0.14);
-  --col-spec-bg: #0c1712;
+  --col-media-border: rgba(247, 243, 227, 0.12);
+  --col-hover: rgba(247, 243, 227, 0.04);
+  --col-spec-bg: #222a25;
   --col-spec-text: #f7f3e3;
-  /* Isotipo en blanco sobre fondo oscuro */
+  --col-spec-muted: rgba(247, 243, 227, 0.55);
+  --col-spec-accent: #e5dfc8;
+  --col-spec-border: rgba(247, 243, 227, 0.12);
   --col-logo-filter: brightness(0) invert(1);
 }
 
-/* 2. RESERVE */
+/* 2. RESERVE — azul pizarra profundo (portada #111720) */
 .theme-collection-reserve {
-  --col-bg: #121921; /* Black 6 C / Dark Slate */
-  --col-surface: #1a232d;
+  --col-bg: #111720;
+  --col-surface: #1a222c;
   --col-card-bg: #0c1117;
-  --col-card-border: rgba(243, 242, 238, 0.15);
+  --col-card-border: rgba(243, 242, 238, 0.14);
   --col-text: #f3f2ee; /* Pantone 11-0601 TPG */
   --col-text-muted: rgba(243, 242, 238, 0.72);
   --col-accent: #c8c9c7; /* Cool Gray 3 C */
+  --col-on-accent: #111720;
   --col-secondary: #8e9092; /* Cool Gray 11 C */
   --col-border: rgba(243, 242, 238, 0.14);
+  --col-media-border: rgba(243, 242, 238, 0.12);
+  --col-hover: rgba(243, 242, 238, 0.04);
   --col-spec-bg: #080c10;
   --col-spec-text: #f3f2ee;
+  --col-spec-muted: rgba(243, 242, 238, 0.55);
+  --col-spec-accent: #c8c9c7;
+  --col-spec-border: rgba(243, 242, 238, 0.12);
   --col-logo-filter: brightness(0) invert(1);
 }
 
-/* 3. TRAVERTINO */
+/* 3. TRAVERTINO — marfil (portada #e8e6df), único tema claro */
 .theme-collection-travertino {
-  --col-bg: #ece9df; /* Pantone 9043 C */
-  --col-surface: #dfdacd;
-  --col-card-bg: #ffffff;
+  --col-bg: #e8e6df;
+  --col-surface: #dedbd2;
+  --col-card-bg: #f4f2ed;
   --col-card-border: rgba(16, 24, 32, 0.12);
   --col-text: #101820; /* Pantone Black 6 C */
   --col-text-muted: rgba(16, 24, 32, 0.7);
   --col-accent: #63564a; /* Pantone 7532 C */
-  --col-secondary: #8e8377; /* Pantone 7534 C */
+  --col-on-accent: #f7f3e3;
+  --col-secondary: #6f6458;
   --col-border: rgba(16, 24, 32, 0.12);
+  --col-media-border: rgba(16, 24, 32, 0.1);
+  --col-hover: rgba(16, 24, 32, 0.03);
   --col-spec-bg: #1a1815;
   --col-spec-text: #f7f3e3;
+  --col-spec-muted: rgba(247, 243, 227, 0.55);
+  --col-spec-accent: #d6c7b0;
+  --col-spec-border: rgba(247, 243, 227, 0.12);
   /* Isotipo en negro sobre fondo claro */
   --col-logo-filter: brightness(0);
 }
 
-/* 4. DUNE IVORY / DUNE */
+/* 4. DUNE IVORY — gris carbón cálido (portada #363432) + acento marfil */
 .theme-collection-dune-ivory,
 .theme-collection-dune {
-  --col-bg: #9e3c14; /* Pantone 167 C */
-  --col-surface: #b3481b;
-  --col-card-bg: #7d2f0e;
-  --col-card-border: rgba(240, 237, 225, 0.18);
-  --col-text: #f0ede1; /* Pantone 7527 C */
-  --col-text-muted: rgba(240, 237, 225, 0.75);
-  --col-accent: #f7e5c8;
-  --col-secondary: #e8d9c0;
-  --col-border: rgba(240, 237, 225, 0.18);
-  --col-spec-bg: #2b160c;
-  --col-spec-text: #f0ede1;
+  --col-bg: #363432;
+  --col-surface: #403d3a;
+  --col-card-bg: #2e2c2a;
+  --col-card-border: rgba(240, 236, 228, 0.14);
+  --col-text: #f0ece4;
+  --col-text-muted: rgba(240, 236, 228, 0.72);
+  --col-accent: #e6dccb; /* marfil */
+  --col-on-accent: #363432;
+  --col-secondary: #b5ab9c;
+  --col-border: rgba(240, 236, 228, 0.14);
+  --col-media-border: rgba(240, 236, 228, 0.12);
+  --col-hover: rgba(240, 236, 228, 0.04);
+  --col-spec-bg: #252322;
+  --col-spec-text: #f0ece4;
+  --col-spec-muted: rgba(240, 236, 228, 0.55);
+  --col-spec-accent: #e6dccb;
+  --col-spec-border: rgba(240, 236, 228, 0.12);
   --col-logo-filter: brightness(0) invert(1);
 }

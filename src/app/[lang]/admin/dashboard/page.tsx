@@ -1,7 +1,13 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import AdminLayout from "@/components/admin/AdminLayout";
+import ExportSubscribersButton from "@/components/admin/dashboard/ExportSubscribersButton";
 import { getInventorySummary } from "../inventory/actions";
+import {
+  CLIENT_TYPE_LABELS,
+  REASON_LABELS,
+  getDashboardData,
+  type CountItem,
+} from "./data";
 
 export const dynamic = "force-dynamic";
 
@@ -9,276 +15,346 @@ type Props = {
   params: Promise<{ lang: string }>;
 };
 
-export default async function DashboardPage({ params }: Props) {
-  const resolvedParams = await params;
-  const lang = resolvedParams.lang;
-  const supabase = await createClient();
+// -----------------------------------------------------------------------------
+// Piezas visuales (tokens MAYA; un solo tono para magnitudes)
+// -----------------------------------------------------------------------------
 
-  const [
-    { count: totalUsers },
-    { count: totalAdmins },
-    { count: totalLeads },
-    { data: recentLeads },
-    { count: totalCollections },
-    { count: totalGalleryPhotos },
-    inventory,
-  ] = await Promise.all([
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("role", "admin"),
-    supabase.from("contact_leads").select("*", { count: "exact", head: true }),
-    supabase
-      .from("contact_leads")
-      .select("id, name, email, contact_reason, created_at")
-      .order("created_at", { ascending: false })
-      .limit(5),
-    supabase.from("collections").select("*", { count: "exact", head: true }),
-    supabase.from("gallery_photos").select("*", { count: "exact", head: true }),
+function Panel({
+  title,
+  action,
+  children,
+  className = "",
+}: {
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`bg-surface border border-border-light p-5 md:p-6 space-y-5 ${className}`}>
+      <div className="flex items-center justify-between gap-4 border-b border-border-light pb-3">
+        <h3 className="font-sans font-light text-maya-h4 tracking-editorial text-black-neutral uppercase">
+          {title}
+        </h3>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  note,
+  href,
+}: {
+  label: string;
+  value: React.ReactNode;
+  note?: React.ReactNode;
+  href?: string;
+}) {
+  const body = (
+    <>
+      <span className="font-mono text-maya-label uppercase tracking-data text-text-muted block">
+        {label}
+      </span>
+      <p className="font-sans font-light text-3xl text-black-neutral tabular-nums mt-1">
+        {value}
+      </p>
+      {note && <p className="text-maya-small text-text-secondary mt-1">{note}</p>}
+    </>
+  );
+  const cls =
+    "block bg-surface border border-border-light p-5 transition-colors";
+  return href ? (
+    <Link href={href} className={`${cls} hover:border-black-neutral`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={cls}>{body}</div>
+  );
+}
+
+/** Barras horizontales: valor visible al final (pocas categorías) */
+function BarList({ items, empty }: { items: CountItem[]; empty: string }) {
+  if (items.length === 0) {
+    return <p className="text-maya-small text-text-secondary">{empty}</p>;
+  }
+  const max = Math.max(...items.map((i) => i.count), 1);
+  return (
+    <ul className="space-y-2.5">
+      {items.map((i) => (
+        <li key={i.label} className="grid grid-cols-[minmax(0,9rem)_1fr_2rem] items-center gap-3">
+          <span className="text-maya-small text-black-neutral truncate" title={i.label}>
+            {i.label}
+          </span>
+          <span className="h-2 bg-black-neutral/10 overflow-hidden">
+            <span
+              className="block h-full bg-black-neutral rounded-r-[4px]"
+              style={{ width: `${(i.count / max) * 100}%` }}
+            />
+          </span>
+          <span className="text-maya-small text-text-secondary tabular-nums text-right">
+            {i.count}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Leads por semana: columnas con valor al pasar el cursor + tabla accesible */
+function WeeklyBars({
+  weeks,
+}: {
+  weeks: { label: string; count: number; current: boolean }[];
+}) {
+  const max = Math.max(...weeks.map((w) => w.count), 1);
+  return (
+    <figure className="space-y-2">
+      <div className="h-40 flex items-end gap-2 border-b border-border-light" aria-hidden="true">
+        {weeks.map((w) => (
+          <div key={w.label} className="group relative flex-1 h-full flex items-end">
+            <span
+              className={`block w-full rounded-t-[4px] transition-opacity ${
+                w.current ? "bg-accent" : "bg-black-neutral"
+              } group-hover:opacity-80`}
+              style={{ height: `${Math.max((w.count / max) * 100, w.count ? 4 : 1)}%` }}
+            />
+            <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black-neutral text-gray-warm text-[11px] px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {w.count} {w.count === 1 ? "lead" : "leads"}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2" aria-hidden="true">
+        {weeks.map((w) => (
+          <span key={w.label} className="flex-1 text-center text-[11px] text-text-muted">
+            {w.label}
+          </span>
+        ))}
+      </div>
+      <figcaption className="text-[11px] text-text-muted">
+        Semana que inicia el lunes indicado. En bronce, la semana actual.
+      </figcaption>
+      <table className="sr-only">
+        <caption>Leads por semana</caption>
+        <tbody>
+          {weeks.map((w) => (
+            <tr key={w.label}>
+              <th scope="row">{w.label}</th>
+              <td>{w.count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
+  );
+}
+
+// -----------------------------------------------------------------------------
+
+export default async function DashboardPage({ params }: Props) {
+  const { lang } = await params;
+  const [d, inventory] = await Promise.all([
+    getDashboardData(),
     getInventorySummary(),
   ]);
 
-  const formattedLastSync = inventory?.lastSync
-    ? new Date(inventory.lastSync).toLocaleDateString("es-MX", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "Sin registros";
+  const k = d.kpis;
+  const diff = k.last7 - k.prev7;
+  const trend =
+    k.prev7 === 0 && k.last7 === 0
+      ? "Sin leads en las últimas 2 semanas"
+      : diff === 0
+        ? "Igual que la semana anterior"
+        : `${diff > 0 ? "+" : ""}${diff} vs. semana anterior`;
 
-  const inStockPercentage = inventory?.total
-    ? Math.round(((inventory.active || 0) / inventory.total) * 100)
-    : 0;
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID;
+  const pendingGaps = d.gaps.filter((g) => g.items.length > 0);
+
+  const fmtDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
 
   return (
     <AdminLayout lang={lang}>
-      <div className="space-y-8 md:space-y-10 font-sans">
-        {/* Encabezado Editorial */}
-        <div className="border-b border-border-light pb-4 md:pb-6 space-y-1">
-          <span className="font-mono text-maya-label uppercase tracking-data text-accent-ink font-semibold block">
-            SISTEMA DE GESTIÓN CENTRAL
-          </span>
+      <div className="space-y-6 md:space-y-8 font-sans">
+        <header className="border-b border-border-light pb-4 flex flex-wrap items-end justify-between gap-4">
           <h2 className="font-sans font-light text-maya-h2 tracking-editorial text-black-neutral uppercase leading-tight">
-            RESUMEN GENERAL
+            Resumen
           </h2>
-        </div>
-
-        {/* Métricas Globales */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {/* Leads */}
-          <div className="bg-surface p-5 md:p-6 border border-border-light flex flex-col justify-between space-y-4 rounded-2xs shadow-2xs">
-            <div>
-              <span className="font-mono text-maya-label uppercase tracking-data text-accent-ink font-semibold block">
-                SOLICITUDES B2B
-              </span>
-              <p className="font-sans font-light text-3xl sm:text-4xl text-black-neutral mt-1">
-                {totalLeads || 0}
-              </p>
-            </div>
-            <Link
-              href={`/${lang}/admin/leads`}
-              className="font-mono text-maya-label uppercase tracking-data text-black-neutral/60 hover:text-accent-ink transition-colors border-t border-border-light pt-3 flex items-center justify-between"
-            >
-              <span>Gestionar Leads</span>
-              <span>→</span>
-            </Link>
-          </div>
-
-          {/* Inventario */}
-          <div className="bg-surface p-5 md:p-6 border border-border-light flex flex-col justify-between space-y-4 rounded-2xs shadow-2xs">
-            <div>
-              <span className="font-mono text-maya-label uppercase tracking-data text-black-neutral/50 font-semibold block">
-                CATÁLOGO Y STOCK
-              </span>
-              <p className="font-sans font-light text-3xl sm:text-4xl text-black-neutral mt-1">
-                {inventory?.total || 0}{" "}
-                <span className="font-mono text-maya-small text-black-neutral/40 uppercase">
-                  SKUs
-                </span>
-              </p>
-            </div>
-            <p className="font-mono text-maya-label text-emerald-800 border-t border-border-light pt-3 truncate font-medium">
-              ● {inventory?.active || 0} Materiales Activos
-            </p>
-          </div>
-
-          {/* Colecciones */}
-          <div className="bg-surface p-5 md:p-6 border border-border-light flex flex-col justify-between space-y-4 rounded-2xs shadow-2xs">
-            <div>
-              <span className="font-mono text-maya-label uppercase tracking-data text-black-neutral/50 font-semibold block">
-                CONTENIDO CURADO
-              </span>
-              <div className="flex items-baseline gap-3 mt-1">
-                <p className="font-sans font-light text-2xl sm:text-3xl text-black-neutral">
-                  {totalCollections || 0}{" "}
-                  <span className="font-mono text-maya-label text-black-neutral/40 uppercase">
-                    Col.
-                  </span>
-                </p>
-                <p className="font-sans font-light text-2xl sm:text-3xl text-black-neutral">
-                  {totalGalleryPhotos || 0}{" "}
-                  <span className="font-mono text-maya-label text-black-neutral/40 uppercase">
-                    Fotos
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div className="font-mono text-maya-label text-black-neutral/50 border-t border-border-light pt-3 flex justify-between">
-              <span>Módulos de Galería</span>
-              <span className="text-accent-ink font-semibold">Activo</span>
-            </div>
-          </div>
-
-          {/* Accesos */}
-          <div className="bg-black-neutral text-gray-warm p-5 md:p-6 border border-black-neutral flex flex-col justify-between space-y-4 rounded-2xs shadow-xs">
-            <div className="space-y-1">
-              <span className="font-mono text-maya-label uppercase tracking-data text-accent-ink font-semibold block">
-                ACCESOS Y ESTADO
-              </span>
-              <div className="flex items-center gap-2 pt-0.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="font-mono text-maya-small tracking-data text-gray-warm uppercase">
-                  {totalUsers || 0} Usuarios ({totalAdmins || 0} Admins)
-                </span>
-              </div>
-            </div>
-            <div className="font-mono text-maya-label text-gray-warm/60 border-t border-gray-warm/15 pt-3 truncate">
-              Sincronizado:{" "}
-              <span className="text-gray-warm">{formattedLastSync}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Paneles de Contenido Principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
-          {/* Stock */}
-          <div className="lg:col-span-7 bg-surface border border-border-light p-6 md:p-8 space-y-6 md:space-y-8 rounded-2xs shadow-2xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-light pb-4 md:pb-6">
-              <div>
-                <span className="font-mono text-maya-label uppercase tracking-data text-accent-ink font-semibold block">
-                  DISPONIBILIDAD DE CANTERA
-                </span>
-                <h3 className="font-sans font-light text-maya-h3 tracking-editorial text-black-neutral uppercase mt-1">
-                  ESTADO DE STOCK PERMANENTE
-                </h3>
-              </div>
-
-              <Link
-                href={`/${lang}/admin/inventory`}
-                className="inline-flex items-center justify-center gap-2 bg-black-neutral text-gray-warm font-mono text-maya-label tracking-data uppercase py-2.5 px-4 hover:bg-black-pure transition-colors shrink-0 rounded-3xs shadow-xs"
-              >
-                <span>GESTIONAR STOCK</span>
-                <span className="text-accent-ink">→</span>
-              </Link>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between items-center font-mono text-maya-label uppercase tracking-data">
-                <span className="text-black-neutral/70">
-                  PROPORCIÓN DISPONIBLE
-                </span>
-                <span className="font-semibold text-black-neutral">
-                  {inStockPercentage}% ACTIVO
-                </span>
-              </div>
-              <div className="w-full h-2 bg-accent-soft overflow-hidden flex rounded-full border border-border-light">
-                <div
-                  style={{ width: `${inStockPercentage}%` }}
-                  className="h-full bg-black-neutral transition-all duration-1000"
-                />
-                <div
-                  style={{ width: `${100 - inStockPercentage}%` }}
-                  className="h-full bg-accent/40 transition-all duration-1000"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 pt-2">
-              <div className="p-4 border-l-2 border-black-neutral bg-surface space-y-1 rounded-r-3xs border border-border-light shadow-2xs">
-                <span className="font-mono text-maya-label uppercase tracking-data text-black-neutral/50 block font-semibold">
-                  TOTAL SKUS
-                </span>
-                <p className="font-sans font-light text-2xl text-black-neutral">
-                  {inventory?.total || 0}
-                </p>
-              </div>
-
-              <div className="p-4 border-l-2 border-emerald-600 bg-surface space-y-1 rounded-r-3xs border border-emerald-500/20 shadow-2xs">
-                <span className="font-mono text-maya-label uppercase tracking-data text-emerald-800/70 block font-semibold">
-                  EN STOCK
-                </span>
-                <p className="font-sans font-light text-2xl text-emerald-900">
-                  {inventory?.active || 0}
-                </p>
-              </div>
-
-              <div className="p-4 border-l-2 border-amber-600 bg-surface space-y-1 rounded-r-3xs border border-amber-500/20 shadow-2xs">
-                <span className="font-mono text-maya-label uppercase tracking-data text-amber-800/70 block font-semibold">
-                  AGOTADOS
-                </span>
-                <p className="font-sans font-light text-2xl text-amber-900">
-                  {inventory?.outOfStock || 0}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Actividad Reciente */}
-          <div className="lg:col-span-5 bg-surface border border-border-light p-6 md:p-8 space-y-6 rounded-2xs shadow-2xs">
-            <div className="flex items-center justify-between border-b border-border-light pb-4 md:pb-6">
-              <div>
-                <span className="font-mono text-maya-label uppercase tracking-data text-accent-ink font-semibold block">
-                  ACTIVIDAD RECIENTE
-                </span>
-                <h3 className="font-sans font-light text-maya-h3 tracking-editorial text-black-neutral uppercase mt-1">
-                  ÚLTIMOS LEADS B2B
-                </h3>
-              </div>
-              <Link
-                href={`/${lang}/admin/leads`}
-                className="font-mono text-maya-label uppercase tracking-data text-black-neutral/70 hover:text-accent-ink transition-colors font-semibold"
-              >
-                VER TODOS ↗
-              </Link>
-            </div>
-
-            {recentLeads && recentLeads.length > 0 ? (
-              <div className="divide-y divide-border-light">
-                {recentLeads.map((lead) => (
-                  <div key={lead.id} className="py-3 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-sans text-maya-small font-medium text-black-neutral">
-                        {lead.name || "Sin nombre"}
-                      </span>
-                      <span className="font-mono text-maya-label text-black-neutral/40">
-                        {new Date(lead.created_at).toLocaleDateString("es-MX", {
-                          day: "2-digit",
-                          month: "short",
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between font-mono text-maya-label text-black-neutral/60 gap-2">
-                      <span className="truncate max-w-[180px]">
-                        {lead.email}
-                      </span>
-                      {lead.contact_reason && (
-                        <span className="uppercase text-[9px] px-2 py-0.5 bg-accent-soft border border-accent/25 text-black-neutral shrink-0 rounded-3xs">
-                          {lead.contact_reason}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="flex flex-wrap gap-2 text-maya-small">
+            {gaId ? (
+              <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer" className="border border-border-strong px-3 py-1.5 hover:bg-black-neutral hover:text-gray-warm transition-colors">
+                Google Analytics ↗
+              </a>
             ) : (
-              <p className="font-mono text-maya-small text-black-neutral/50 font-normal py-4 italic">
-                No hay solicitudes de contacto recientes registradas.
-              </p>
+              <span className="border border-border-light px-3 py-1.5 text-text-muted">Analytics sin configurar</span>
+            )}
+            {clarityId ? (
+              <a href={`https://clarity.microsoft.com/projects/view/${clarityId}/dashboard`} target="_blank" rel="noopener noreferrer" className="border border-border-strong px-3 py-1.5 hover:bg-black-neutral hover:text-gray-warm transition-colors">
+                Mapa de calor (Clarity) ↗
+              </a>
+            ) : (
+              <span className="border border-border-light px-3 py-1.5 text-text-muted">Clarity sin configurar</span>
             )}
           </div>
+        </header>
+
+        {/* KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <Kpi label="Leads · 7 días" value={k.last7} note={trend} href={`/${lang}/admin/leads`} />
+          <Kpi label="Leads · 30 días" value={k.last30} note={`${k.totalLeads} en total`} href={`/${lang}/admin/leads`} />
+          <Kpi
+            label="Suscriptores"
+            value={k.subscribers}
+            note={`+${k.subscribers30} en 30 días`}
+          />
+          <Kpi
+            label="Enviados al CRM · 30 días"
+            value={k.crmSyncedPct === null ? "—" : `${k.crmSyncedPct}%`}
+            note={
+              k.crmFailed > 0 ? (
+                <span className="text-red-800">⚠ {k.crmFailed} sin enviar · reenvíalos en Leads</span>
+              ) : (
+                "Sin errores de envío"
+              )
+            }
+            href={`/${lang}/admin/leads`}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start">
+          <Panel title="Leads por semana" className="lg:col-span-7">
+            <WeeklyBars weeks={d.weeks} />
+          </Panel>
+
+          <Panel
+            title="Últimos leads"
+            className="lg:col-span-5"
+            action={
+              <Link href={`/${lang}/admin/leads`} className="text-maya-small text-text-secondary hover:text-accent-ink">
+                Ver todos
+              </Link>
+            }
+          >
+            {d.recentLeads.length === 0 ? (
+              <p className="text-maya-small text-text-secondary">Aún no hay leads del formulario.</p>
+            ) : (
+              <ul className="divide-y divide-border-light -my-2">
+                {d.recentLeads.map((l) => (
+                  <li key={l.id} className="py-2.5 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-maya-small text-black-neutral truncate">
+                        {[l.company, l.name].filter(Boolean).join(" / ")}
+                      </p>
+                      <p className="text-[12px] text-text-secondary truncate">
+                        {[
+                          REASON_LABELS[l.contact_reason] || l.contact_reason,
+                          CLIENT_TYPE_LABELS[l.profile_type] || l.profile_type,
+                          l.location,
+                        ]
+                          .filter(Boolean)
+                          .join(" — ")}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[12px] text-text-muted">{fmtDate(l.created_at)}</p>
+                      <p className={`text-[11px] ${l.crm_lead_code ? "text-text-secondary" : "text-red-800"}`}>
+                        {l.crm_lead_code || "No enviado"}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 items-start">
+          <Panel title="Motivo · 90 días">
+            <BarList items={d.byReason} empty="Sin datos todavía." />
+          </Panel>
+          <Panel title="Tipo de cliente · 90 días">
+            <BarList items={d.byClientType} empty="Sin datos todavía." />
+          </Panel>
+          <Panel title="Materiales más solicitados">
+            <BarList items={d.topMaterials} empty="Se llena con los leads que llegan desde “Consultar disponibilidad”." />
+          </Panel>
+          <Panel title="Ubicaciones · 90 días">
+            <BarList items={d.topLocations} empty="Sin datos todavía." />
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start">
+          <Panel
+            title="Suscriptores de catálogos"
+            className="lg:col-span-5"
+            action={<ExportSubscribersButton />}
+          >
+            {d.recentSubscribers.length === 0 ? (
+              <p className="text-maya-small text-text-secondary">
+                Aún no hay registros del aviso de catálogos.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border-light -my-2">
+                {d.recentSubscribers.map((s) => (
+                  <li key={s.email} className="py-2.5 flex items-center justify-between gap-3 text-maya-small">
+                    <span className="truncate">{s.email}</span>
+                    <span className="text-[12px] text-text-muted shrink-0">
+                      {s.collection_slug ? `${s.collection_slug} — ` : ""}
+                      {fmtDate(s.created_at)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <Panel title="Pendientes de contenido" className="lg:col-span-7">
+            {pendingGaps.length === 0 ? (
+              <p className="text-maya-small text-text-secondary">Todo el contenido está completo.</p>
+            ) : (
+              <ul className="space-y-3">
+                {pendingGaps.map((g) => (
+                  <li key={g.label}>
+                    <details className="group border border-border-light bg-background/40">
+                      <summary className="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer text-maya-small">
+                        <span>{g.label}</span>
+                        <span className="flex items-center gap-3">
+                          <span className="tabular-nums text-text-secondary">{g.items.length}</span>
+                          <Link href={`/${lang}/admin/${g.href}`} className="text-[12px] text-accent-ink hover:underline">
+                            Corregir
+                          </Link>
+                        </span>
+                      </summary>
+                      <p className="px-3.5 pb-3 text-[12px] text-text-secondary leading-relaxed">
+                        {g.items.slice(0, 30).join(", ")}
+                        {g.items.length > 30 ? ` y ${g.items.length - 30} más` : ""}
+                      </p>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="border-t border-border-light pt-4 grid grid-cols-3 gap-3 text-maya-small">
+              <div>
+                <p className="text-[12px] text-text-muted">SKUs</p>
+                <p className="text-xl font-light tabular-nums">{inventory?.total ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-[12px] text-text-muted">Activos</p>
+                <p className="text-xl font-light tabular-nums">{inventory?.active ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-[12px] text-text-muted">Ocultos / agotados</p>
+                <p className="text-xl font-light tabular-nums">{inventory?.outOfStock ?? 0}</p>
+              </div>
+            </div>
+          </Panel>
         </div>
       </div>
     </AdminLayout>

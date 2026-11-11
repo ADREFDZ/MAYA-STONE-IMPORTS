@@ -12,11 +12,11 @@ interface FooterProps {
     contact_address: string;
     contact_phone: string;
     contact_email: string;
-    legal_terms?: string;
-    legal_privacy?: string;
-    legal_cookies?: string;
-    legal_cookie_preferences?: string;
-    legal_rights?: string;
+    legal_terms: string;
+    legal_privacy: string;
+    legal_cookies: string;
+    legal_cookie_preferences: string;
+    legal_rights: string;
     social_instagram?: string;
     social_facebook?: string;
   };
@@ -41,8 +41,9 @@ export default function Footer({ dict, lang = "es" }: FooterProps) {
   };
 
   return (
-    <footer className="w-full bg-black-neutral text-gray-warm border-t border-gray-warm/15 font-sans selection:bg-accent selection:text-white py-12 sm:py-16 md:py-20">
-      <div className="editorial-container">
+    <footer className="w-full bg-black-neutral text-gray-warm border-t border-gray-warm/15 font-sans selection:bg-accent selection:text-white py-10 sm:py-12 md:py-14">
+      {/* Mismos márgenes laterales que el header */}
+      <div className="w-full px-4 sm:px-7 md:px-10 lg:px-14">
         {/* BLOQUE PRINCIPAL DE INFORMACIÓN */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-8 lg:gap-10 pb-10 sm:pb-12 border-b border-gray-warm/15 items-start">
           {/* Columna 1: Identidad y Manifiesto */}
@@ -129,8 +130,7 @@ export default function Footer({ dict, lang = "es" }: FooterProps) {
         {/* BLOQUE INFERIOR: DERECHOS Y DOCUMENTOS LEGALES */}
         <div className="pt-6 sm:pt-8 flex flex-col lg:flex-row justify-between items-center gap-4 font-mono text-maya-label tracking-data text-gray-warm/40 uppercase">
           <div className="text-center lg:text-left select-none">
-            {dict.legal_rights ||
-              `© ${new Date().getFullYear()} MAYA. Todos los derechos reservados.`}
+            {dict.legal_rights}
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-x-5 sm:gap-x-6 gap-y-2 text-center">
@@ -138,30 +138,21 @@ export default function Footer({ dict, lang = "es" }: FooterProps) {
               href={`/${ROUTES.privacidad[currentLocale]}`}
               className="text-gray-warm/60 hover:text-accent-ink transition-colors duration-200 underline underline-offset-4 decoration-gray-warm/25"
             >
-              {dict.legal_privacy ||
-                (currentLocale === "es"
-                  ? "Aviso de Privacidad"
-                  : "Privacy Policy")}
+              {dict.legal_privacy}
             </Link>
 
             <Link
               href={`/${ROUTES.terminos[currentLocale]}`}
               className="text-gray-warm/60 hover:text-accent-ink transition-colors duration-200 underline underline-offset-4 decoration-gray-warm/25"
             >
-              {dict.legal_terms ||
-                (currentLocale === "es"
-                  ? "Términos y Condiciones"
-                  : "Terms & Conditions")}
+              {dict.legal_terms}
             </Link>
 
             <Link
               href={`/${ROUTES.cookies[currentLocale]}`}
               className="text-gray-warm/60 hover:text-accent-ink transition-colors duration-200 underline underline-offset-4 decoration-gray-warm/25"
             >
-              {dict.legal_cookies ||
-                (currentLocale === "es"
-                  ? "Política de Cookies"
-                  : "Cookie Policy")}
+              {dict.legal_cookies}
             </Link>
 
             {/* BOTÓN DISPARADOR DE CONFIGURACIÓN DE COOKIES */}
@@ -170,10 +161,7 @@ export default function Footer({ dict, lang = "es" }: FooterProps) {
               onClick={handleOpenCookies}
               className="text-accent-ink/90 hover:text-accent-ink transition-colors duration-200 underline underline-offset-4 decoration-accent/40 cursor-pointer"
             >
-              {dict.legal_cookie_preferences ||
-                (currentLocale === "es"
-                  ? "Preferencias de Cookies"
-                  : "Cookie Preferences")}
+              {dict.legal_cookie_preferences}
             </button>
           </div>
         </div>

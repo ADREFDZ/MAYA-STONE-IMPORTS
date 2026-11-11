@@ -126,25 +126,9 @@ const getHomeDataCached = cached(async () => {
     hero = fallbackRes.data?.[0] ?? null;
   }
 
-  // Pool de candidatos para "Variaciones y piezas relacionadas".
-  // Se cachea el pool; la selección aleatoria de 4 se hace en CADA visita
-  // (ver pickRandomVariations), así cada entrada al sitio muestra otros.
-  let variationPool: typeof featuredRes.data = [];
-  if (hero) {
-    const { data: candidates } = await supabase
-      .from("products")
-      .select(PRODUCT_WITH_RENDERS)
-      .eq("status", "active")
-      .neq("sku", hero.sku)
-      .not("image_url", "is", null)
-      .limit(60);
-    variationPool = candidates ?? [];
-  }
-
   return {
     finishes: finishesRes.data ?? [],
     hero,
-    variationPool: variationPool ?? [],
     bentoCollections: bentoRes.data ?? [],
     homeProjects: projectsRes.data ?? [],
   };
@@ -156,7 +140,6 @@ export const getHomeData = () =>
     {
       finishes: [],
       hero: null,
-      variationPool: [],
       bentoCollections: [],
       homeProjects: [],
     } as Awaited<ReturnType<typeof getHomeDataCached>>,
@@ -198,6 +181,44 @@ export async function getCollectionsCatalogRaw() {
     return { data: null, error: { message } };
   }
 }
+
+// =============================================================================
+// CONTACTO: colecciones activas para "Línea de interés" del formulario
+// =============================================================================
+
+const getContactCollectionsCached = cached(async () => {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("collections")
+    .select("slug, title_es, title_en")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("title_es", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}, "contact-collections");
+
+export const getContactCollections = () =>
+  safe(getContactCollectionsCached, [], "contact-collections");
+
+// =============================================================================
+// CATÁLOGOS PDF (pop-up de catálogo en todo el sitio)
+// =============================================================================
+
+const getCatalogLinksCached = cached(async () => {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("collections")
+    .select("slug, title_es, title_en, catalog_url")
+    .eq("is_active", true)
+    .not("catalog_url", "is", null)
+    .order("sort_order", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).filter((c) => Boolean(c.catalog_url));
+}, "catalog-links");
+
+export const getCatalogLinks = () =>
+  safe(getCatalogLinksCached, [], "catalog-links");
 
 // =============================================================================
 // ARQUITECTURA / PROYECTOS
@@ -251,16 +272,3 @@ const getSitemapEntriesCached = cached(async () => {
 
 export const getSitemapEntries = () =>
   safe(getSitemapEntriesCached, { projects: [], collections: [] }, "sitemap");
-
-/**
- * Elige `count` materiales al azar del pool (Fisher–Yates).
- * Se llama en cada render del home, no dentro del caché.
- */
-export function pickRandomVariations<T>(pool: T[], count = 4): T[] {
-  const copy = [...pool];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy.slice(0, count);
-}

@@ -67,11 +67,11 @@ export async function uploadMaterialImageAction(formData: FormData) {
         error: "El SKU es requerido para asociar la imagen.",
       };
 
-    const MAX_SIZE_BYTES = 2 * 1024 * 1024;
+    const MAX_SIZE_BYTES = 4.5 * 1024 * 1024;
     if (file.size > MAX_SIZE_BYTES) {
       return {
         success: false,
-        error: "La imagen excede el tamaño máximo permitido (2 MB).",
+        error: "La imagen excede el tamaño máximo permitido (4.5 MB).",
       };
     }
 
@@ -84,7 +84,7 @@ export async function uploadMaterialImageAction(formData: FormData) {
     const { error: uploadError } = await supabase.storage
       .from("materials")
       .upload(filePath, file, {
-        contentType: "image/webp",
+        contentType: file.type || "image/webp",
         cacheControl: "3600",
         upsert: true,
       });
@@ -153,8 +153,8 @@ export async function uploadMaterialRenderAction(formData: FormData) {
     const { error: uploadError } = await supabase.storage
       .from("materials")
       .upload(filePath, file, {
-        contentType: "image/webp",
-        cacheControl: "3600",
+        contentType: file.type || "image/webp",
+        cacheControl: "31536000",
         upsert: true,
       });
 
@@ -176,7 +176,7 @@ export async function uploadMaterialRenderAction(formData: FormData) {
 
     if (dbError) return { success: false, error: dbError.message };
 
-    revalidatePath("/[lang]/admin/inventario", "page");
+    revalidatePath("/[lang]/admin/inventory", "page");
     revalidatePath("/[lang]/catalogo", "page");
     revalidatePath("/[lang]/colecciones", "page");
     revalidatePath("/[lang]", "page");
@@ -212,7 +212,7 @@ export async function deleteMaterialRenderAction(
 
     if (error) return { success: false, error: error.message };
 
-    revalidatePath("/[lang]/admin/inventario", "page");
+    revalidatePath("/[lang]/admin/inventory", "page");
     revalidatePath("/[lang]/catalogo", "page");
     revalidatePath("/[lang]/colecciones", "page");
     revalidatePath("/[lang]", "page");
@@ -250,7 +250,9 @@ export async function getProducts() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("*, material_renders(*)")
+    .select(
+      "*, material_renders(*), collection_products(collections(slug, title_es))",
+    )
     .order("updated_at", { ascending: false });
 
   if (error) return [];
@@ -274,6 +276,11 @@ export async function getProducts() {
       material_renders: Array.isArray(p.material_renders)
         ? p.material_renders
         : [],
+      // Colecciones a las que está asignado (para filtrar en el inventario)
+      collections: (Array.isArray(p.collection_products) ? p.collection_products : [])
+        .map((cp: any) => cp?.collections)
+        .filter(Boolean)
+        .map((c: any) => ({ slug: c.slug as string, title: (c.title_es || c.slug) as string })),
     };
   });
 }
@@ -360,7 +367,7 @@ export async function createProductAction(data: ExtendedProductData) {
       return { success: false, error: error.message };
     }
 
-    revalidatePath("/[lang]/admin/inventario", "page");
+    revalidatePath("/[lang]/admin/inventory", "page");
     revalidatePath("/[lang]/catalogo", "page");
     revalidatePath("/[lang]", "page");
     invalidatePublicCache();
@@ -417,7 +424,7 @@ export async function updateProductAction(
 
     if (error) return { success: false, error: error.message };
 
-    revalidatePath("/[lang]/admin/inventario", "page");
+    revalidatePath("/[lang]/admin/inventory", "page");
     revalidatePath("/[lang]/catalogo", "page");
     revalidatePath("/[lang]", "page");
     invalidatePublicCache();
@@ -438,7 +445,7 @@ export async function deleteProductAction(sku: string) {
     const { error } = await supabase.from("products").delete().eq("sku", sku);
     if (error) return { success: false, error: error.message };
 
-    revalidatePath("/[lang]/admin/inventario", "page");
+    revalidatePath("/[lang]/admin/inventory", "page");
     revalidatePath("/[lang]/catalogo", "page");
     revalidatePath("/[lang]", "page");
     invalidatePublicCache();

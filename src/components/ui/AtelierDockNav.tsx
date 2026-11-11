@@ -15,6 +15,8 @@ interface AtelierDockNavProps {
   headerLabel?: string;
   scrollTarget?: "item-key" | string;
   scrollOffset?: number;
+  /** ID del elemento que activa la visibilidad del Dock al llegar a él */
+  triggerTarget?: string;
 }
 
 export default function AtelierDockNav({
@@ -24,6 +26,7 @@ export default function AtelierDockNav({
   headerLabel,
   scrollTarget = "item-key",
   scrollOffset = -80,
+  triggerTarget,
 }: AtelierDockNavProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -32,23 +35,34 @@ export default function AtelierDockNav({
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    // Si se especifica un triggerTarget, se observa ese contenedor directamente
+    const targetEl = triggerTarget
+      ? document.getElementById(triggerTarget)
+      : sentinelRef.current;
+
+    if (!targetEl) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(!entry.isIntersecting);
+        if (triggerTarget) {
+          // Aparece cuando el inicio de la sección de proyectos toca la parte superior del viewport
+          setIsVisible(
+            entry.isIntersecting || entry.boundingClientRect.top <= 120,
+          );
+        } else {
+          setIsVisible(!entry.isIntersecting);
+        }
       },
       {
         root: null,
         threshold: 0,
-        rootMargin: "-80px 0px 0px 0px",
+        rootMargin: triggerTarget ? "0px 0px -10% 0px" : "-80px 0px 0px 0px",
       },
     );
 
-    observer.observe(sentinel);
+    observer.observe(targetEl);
     return () => observer.disconnect();
-  }, []);
+  }, [triggerTarget]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -82,11 +96,9 @@ export default function AtelierDockNav({
   const handleSelect = (key: string) => {
     onSelect?.(key);
     setIsOpen(false);
-
     if (scrollTarget) {
       setTimeout(() => {
         let targetElement: HTMLElement | null = null;
-
         if (scrollTarget === "item-key") {
           targetElement =
             document.getElementById(key) ||
@@ -96,12 +108,10 @@ export default function AtelierDockNav({
         } else {
           targetElement = document.getElementById(scrollTarget);
         }
-
         if (targetElement) {
           const elementPosition = targetElement.getBoundingClientRect().top;
           const offsetPosition =
             elementPosition + window.scrollY + scrollOffset;
-
           window.scrollTo({
             top: Math.max(0, offsetPosition),
             behavior: "smooth",
@@ -116,14 +126,20 @@ export default function AtelierDockNav({
 
   return (
     <>
-      <div ref={sentinelRef} className="w-full h-px pointer-events-none" />
+      {!triggerTarget && (
+        <div ref={sentinelRef} className="w-full h-px pointer-events-none" />
+      )}
 
       {/* DOCK FLOTANTE */}
       <aside
         ref={dockRef}
-        aria-label={headerLabel || "Navegación de Colecciones"}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        aria-label={headerLabel || "Navegación"}
+        // Solo mouse: en táctil el hover emulado abría y el tap cerraba al instante
+        onPointerEnter={(e) => e.pointerType === "mouse" && handleMouseEnter()}
+        onPointerLeave={(e) => e.pointerType === "mouse" && handleMouseLeave()}
+        // Oculto (antes de llegar a la rejilla): fuera del orden de Tab
+        inert={!isVisible}
+        onKeyDown={(e) => e.key === "Escape" && setIsOpen(false)}
         className={`fixed bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 select-none transition-all duration-500 ease-out pointer-events-auto ${
           isVisible
             ? "opacity-100 translate-y-0"
@@ -166,7 +182,6 @@ export default function AtelierDockNav({
                     </span>
                     <span className="truncate">{item.label}</span>
                   </div>
-
                   {isSelected && (
                     <span className="text-[10px] text-white font-bold">✓</span>
                   )}
@@ -180,6 +195,7 @@ export default function AtelierDockNav({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
           className="bg-black-neutral/90 backdrop-blur-xl text-gray-warm border border-white/15 hover:border-accent shadow-2xl rounded-full px-4 py-2 sm:px-5 sm:py-2.5 flex items-center gap-3 transition-all duration-300 cursor-pointer group"
         >
           {headerLabel && (
@@ -190,12 +206,11 @@ export default function AtelierDockNav({
               <span className="h-3 w-px bg-white/20" />
             </>
           )}
-
           <span className="font-mono text-maya-small uppercase tracking-data text-gray-warm font-medium max-w-[160px] sm:max-w-[220px] truncate">
             {activeItem?.label}
           </span>
-
           <span
+            aria-hidden="true"
             className={`font-mono text-[9px] text-accent-ink transition-transform duration-300 ml-0.5 ${
               isOpen ? "rotate-180" : "rotate-0"
             }`}

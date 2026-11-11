@@ -1,3 +1,4 @@
+import { toTitleCase } from "@/lib/utils/strings";
 interface CreateMondayLeadParams {
   name: string;
   email: string;
@@ -20,18 +21,26 @@ const REASON_LABELS: Record<string, string> = {
   other: "Contacto General",
 };
 
+// Las colecciones llegan con su slug (p. ej. "dune-ivory") y se muestran
+// con formato de título; estas son las opciones fijas del formulario.
 const CATEGORY_LABELS: Record<string, string> = {
+  wood: "Rivas Wood",
+  bespoke: "Bespoke / Servicios a medida",
+  other: "Otro",
+  // Valores anteriores
   all: "Toda la Colección",
   stone: "Piedra Natural (Mármol / Cuarcita / Travertino)",
-  wood: "Maderas Nobles",
-  bespoke: "Proyectos a Medida",
 };
 
 const PROFILE_LABELS: Record<string, string> = {
-  architect: "Arquitecto / Estudio",
-  developer: "Desarrolladora / Constructora",
-  private: "Cliente Particular",
+  architecture: "Despacho de arquitectura",
+  interior: "Estudio de interiorismo",
+  developer: "Desarrolladora inmobiliaria",
+  construction: "Constructora",
+  private: "Cliente particular",
   other: "Otro",
+  // Valor anterior (leads registrados antes del cambio)
+  architect: "Arquitecto / Estudio",
 };
 
 export async function sendLeadToMonday(params: CreateMondayLeadParams) {
@@ -50,7 +59,10 @@ export async function sendLeadToMonday(params: CreateMondayLeadParams) {
   const readableReason =
     REASON_LABELS[params.reason || ""] || params.reason || "Web Contact";
   const readableCategory =
-    CATEGORY_LABELS[params.category_interest || ""] || params.category_interest;
+    CATEGORY_LABELS[params.category_interest || ""] ||
+    (params.category_interest
+      ? toTitleCase(params.category_interest.replace(/-/g, " "))
+      : params.category_interest);
   const readableProfile =
     PROFILE_LABELS[params.profile_type || ""] ||
     params.profile_type ||

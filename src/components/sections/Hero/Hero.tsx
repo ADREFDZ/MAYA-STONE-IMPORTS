@@ -13,8 +13,9 @@ interface HeroProps {
     line1: string;
     line2: string;
     line3: string;
+    subtitle: string;
     cta_explore: string;
-    cta_visit: string;
+    cta_quote: string;
   };
 }
 
@@ -24,6 +25,7 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const linesRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
   const ctasRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const centerLogoRef = useRef<HTMLDivElement>(null);
@@ -90,7 +92,22 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
         );
       }
 
-      // 3. Aparición de CTAs
+      // 3. Aparición del subtítulo
+      if (subtitleRef.current) {
+        tl.fromTo(
+          subtitleRef.current,
+          { y: 15, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            ease: "power2.out",
+          },
+          "-=0.3",
+        );
+      }
+
+      // 4. Aparición de CTAs
       if (ctasRef.current) {
         tl.fromTo(
           ctasRef.current,
@@ -105,7 +122,7 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
         );
       }
 
-      // 4. Retención obligatoria de lectura antes del desenlace
+      // 5. Retención obligatoria de lectura antes del desenlace
       tl.to({}, { duration: 2.2 });
     }, wrapperRef);
 
@@ -115,11 +132,15 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full h-[280vh] sm:h-[300vh] bg-black-neutral"
+      className="relative w-full h-[200vh] sm:h-[300vh] bg-black-neutral"
     >
       <section
         ref={containerRef}
-        className="relative h-[100dvh] w-full bg-black-neutral overflow-hidden top-0 left-0 z-10 flex flex-col justify-end"
+        // h-lvh (altura con la barra del navegador OCULTA): GSAP fija la altura
+        // en px al anclar la sección; con dvh se quedaba con la altura "con
+        // barra" y al ocultarse la barra en el celular aparecía una franja
+        // negra debajo del video. Ver el padding inferior del contenido.
+        className="relative h-lvh w-full bg-black-neutral overflow-hidden top-0 left-0 z-10 flex flex-col justify-end"
       >
         {/* VIDEO DE FONDO */}
         <div className="absolute inset-0 z-0 pointer-events-none">
@@ -133,20 +154,22 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
             poster="/videos/MAYA_Hero2-poster.webp"
             className="h-full w-full object-cover scale-100 bg-black-neutral"
           >
-            {/* Versión ligera (720p) en móvil; 1080p en pantallas grandes */}
+            {/* 720p (3 MB) en celular; 1080p (9 MB) en pantallas grandes. Ambos con
+                faststart: empiezan a reproducirse sin esperar la descarga.
+                Originales en alta: _originales/videos */}
             <source
               src="/videos/MAYA_Hero2-720.mp4"
               type="video/mp4"
               media="(max-width: 768px)"
             />
-            <source src="/videos/MAYA_Hero2.mp4" type="video/mp4" />
+            <source src="/videos/MAYA_Hero2-1080.mp4" type="video/mp4" />
           </video>
         </div>
 
         {/* LOGOTIPO CENTRAL INICIAL */}
         <div
           ref={centerLogoRef}
-          className="absolute inset-0 z-20 flex items-center justify-center p-4 sm:p-6 pointer-events-none"
+          className="absolute inset-x-0 top-0 h-svh z-20 flex items-center justify-center p-4 sm:p-6 pointer-events-none"
         >
           <div className="w-full max-w-[200px] sm:max-w-[360px] lg:max-w-[480px]">
             <Image
@@ -161,7 +184,9 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
         </div>
 
         {/* CONTENIDO EDITORIAL */}
-        <div className="relative z-30 editorial-container w-full pb-10 sm:pb-16 md:pb-20 pointer-events-none">
+        {/* El padding suma (100lvh − 100svh): lo que tapa la barra del navegador
+            cuando está visible, para que los botones nunca queden debajo. */}
+        <div className="relative z-30 editorial-container w-full pb-[calc(2.5rem+100lvh-100svh)] sm:pb-[calc(4rem+100lvh-100svh)] md:pb-[calc(5rem+100lvh-100svh)] pointer-events-none">
           <div className="max-w-3xl pointer-events-auto space-y-4 sm:space-y-6">
             <h1 ref={linesRef} className="flex flex-col gap-2 sm:gap-2">
               <span className="block font-sans text-maya-h4 sm:text-maya-h3 font-light tracking-editorial uppercase text-gray-warm/80">
@@ -175,23 +200,30 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
               </span>
             </h1>
 
+            <p
+              ref={subtitleRef}
+              className="font-sans font-light text-maya-small sm:text-maya-body text-gray-warm/75 leading-relaxed max-w-xl"
+            >
+              {dict.subtitle}
+            </p>
+
             <div
               ref={ctasRef}
               className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-4 w-full max-w-sm sm:max-w-none"
             >
               <Button
-                href={`/${ROUTES.coleccion[currentLocale]}`}
+                href={`/${ROUTES.contacto[currentLocale]}?reason=quote`}
                 variant="primary"
                 className="w-full sm:w-auto"
               >
-                {dict.cta_explore}
+                {dict.cta_quote}
               </Button>
               <Button
-                href={`/${ROUTES.contacto[currentLocale]}?reason=showroom`}
+                href={`/${ROUTES.coleccion[currentLocale]}`}
                 variant="secondary"
                 className="w-full sm:w-auto"
               >
-                {dict.cta_visit}
+                {dict.cta_explore}
               </Button>
             </div>
           </div>

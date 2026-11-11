@@ -1,20 +1,22 @@
 "use client";
 
+import type React from "react";
 import { useState, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { ROUTES, getCleanPath, type Locale } from "@/lib/i18n/routes";
+import { startLanguageTransition } from "@/components/ui/LanguageTransitionOverlay";
+import { lockScroll } from "@/lib/utils/scrollLock";
 
 interface HeaderProps {
   dict: {
     coleccion: string;
     arquitectura: string;
-    bespoke: string;
-    estudio: string;
     about: string;
     contacto: string;
+    home_aria: string;
     menu_open?: string;
     menu_close?: string;
     admin_panel?: string;
@@ -46,9 +48,6 @@ export default function Header({ dict, lang }: HeaderProps) {
     window.addEventListener("scroll", checkScroll, { passive: true });
 
     const checkAdminSession = async () => {
-      // getSession() lee la sesión local (sin red). Solo si existe una sesión
-      // se valida contra Supabase; así los visitantes anónimos no generan
-      // peticiones a Supabase en cada página.
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -90,7 +89,13 @@ export default function Header({ dict, lang }: HeaderProps) {
     };
   }, [supabase]);
 
-  // Cerrar menú móvil al cambiar de ruta
+  // Bloqueo de scroll de fondo con menú móvil abierto
+  useEffect(() => {
+    if (!isOpen) return;
+    return lockScroll();
+  }, [isOpen]);
+
+  // Cerrar menú al cambiar de ruta
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
@@ -105,47 +110,15 @@ export default function Header({ dict, lang }: HeaderProps) {
     return null;
   }
 
-  // Activa la cortina y almacena la coordenada de scroll
-  const handleLangTransition = (newLocale: Locale) => {
+  const handleLangTransition = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    newLocale: Locale,
+    href: string,
+  ) => {
+    e.preventDefault();
     if (newLocale === currentLocale) return;
-    sessionStorage.setItem("maya_saved_scroll", window.scrollY.toString());
-    sessionStorage.setItem("maya_lang_transition", "true");
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-
-    if (
-      typeof document !== "undefined" &&
-      !document.getElementById("maya-fallback-overlay")
-    ) {
-      const overlay = document.createElement("div");
-      overlay.id = "maya-fallback-overlay";
-      overlay.style.cssText = `
-        position: fixed;
-        inset: 0;
-        z-index: 999999;
-        background-color: #252525;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        opacity: 1;
-        transition: opacity 0.4s ease;
-      `;
-      overlay.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 24px;">
-          <img src="/images/MAYA_LOGOTIPO_LIGHT.png" alt="MAYA" style="height: 16px; width: auto; opacity: 0.9;" />
-          <div style="position: relative; width: 80px; height: 2px; background-color: rgba(255,255,255,0.15); overflow: hidden; border-radius: 9999px;">
-            <div style="position: absolute; inset-block: 0; width: 50%; background-color: #8c7355; border-radius: 9999px; animation: maya-slide 1.2s infinite ease-in-out;"></div>
-          </div>
-        </div>
-        <style>
-          @keyframes maya-slide {
-            0% { left: -50%; }
-            100% { left: 100%; }
-          }
-        </style>
-      `;
-      document.body.appendChild(overlay);
-    }
+    startLanguageTransition(href);
   };
 
   const navItems = [
@@ -170,45 +143,54 @@ export default function Header({ dict, lang }: HeaderProps) {
   const targetPathEs = getCleanPath(pathname, "es", searchParams);
   const targetPathEn = getCleanPath(pathname, "en", searchParams);
 
-  // En barra de lado a lado cuadrada, mantenemos visibilidad nítida en todo scroll
-  const isSolidBar = scrolled || !isHome;
+  const isSolidBar = scrolled || !isHome || isOpen;
+
+  // Barra sólida = clara (fondo gray-warm de marca, texto neutral black).
+  // Transparente sobre el hero del home = texto claro.
+  const ink = isSolidBar ? "text-text-primary" : "text-gray-warm";
+  const divider = isSolidBar ? "bg-black-neutral/20" : "bg-gray-warm/25";
 
   return (
     <header
       className={`fixed top-0 left-0 z-50 w-full transition-colors duration-300 ease-in-out border-b ${
         isSolidBar
-          ? "bg-black-neutral/95 backdrop-blur-md border-gray-warm/15 shadow-sm"
+          ? "header-light bg-background/95 backdrop-blur-md border-border-light shadow-sm"
           : "bg-transparent border-transparent"
       }`}
     >
-      <div className="w-full px-5 sm:px-8 md:px-12 lg:px-16">
-        <div className="flex items-center justify-between h-14 sm:h-16 md:h-20 w-full">
+      <div className="w-full px-4 sm:px-7 md:px-10 lg:px-14">
+        {/* Barra superior con altura estrictamente ceñida en móvil (h-14 / 56px) */}
+        <div className="flex items-center justify-between h-14 sm:h-[58px] md:h-[72px] w-full">
           {/* COLUMNA 1: LOGOTIPO */}
           <div className="flex items-center justify-start shrink-0">
             <Link
               href={currentLocale === "en" ? "/en" : "/"}
               scroll={false}
               className="block transition-opacity duration-300 hover:opacity-80"
-              aria-label={currentLocale === "en" ? "MAYA Home" : "MAYA Inicio"}
+              aria-label={dict.home_aria}
             >
               <Image
-                src="/images/MAYA_LOGOTIPO_LIGHT.png"
+                src={
+                  isSolidBar
+                    ? "/images/MAYA_LOGOTIPO.png"
+                    : "/images/MAYA_LOGOTIPO_LIGHT.png"
+                }
                 alt="MAYA Stone Imports"
                 width={120}
                 height={30}
                 priority
-                className="h-3 sm:h-3.5 md:h-4 w-auto object-contain"
+                className="h-3 sm:h-3.5 md:h-[14.5px] w-auto object-contain"
               />
             </Link>
           </div>
 
           {/* COLUMNA 2: NAVEGACIÓN DESKTOP */}
-          <nav className="hidden md:flex items-center justify-center gap-8 lg:gap-12 h-full">
+          <nav className="hidden md:flex items-center justify-center gap-7 lg:gap-10 h-full">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={`/${item.path}`}
-                className="group relative py-1 font-sans text-maya-label font-normal tracking-nav uppercase transition-colors duration-300 hover:opacity-70 whitespace-nowrap text-gray-warm"
+                className={`group relative py-1 font-sans text-maya-label font-normal tracking-nav uppercase transition-colors duration-300 hover:opacity-70 whitespace-nowrap ${ink}`}
               >
                 {item.label}
                 <span className="absolute bottom-0 left-0 h-px w-0 transition-all duration-300 group-hover:w-full bg-accent" />
@@ -216,14 +198,16 @@ export default function Header({ dict, lang }: HeaderProps) {
             ))}
           </nav>
 
-          {/* COLUMNA 3: ACCIONES DERECHA (Idioma, Admin, Mobile Toggle) */}
-          <div className="flex items-center justify-end gap-4 sm:gap-6">
-            {/* SELECTOR DE IDIOMA */}
-            <div className="hidden md:flex items-center gap-1.5 font-sans text-maya-label tracking-data text-gray-warm">
+          {/* COLUMNA 3: ACCIONES DERECHA */}
+          <div className="flex items-center justify-end gap-3 sm:gap-5">
+            {/* SELECTOR DE IDIOMA DESKTOP */}
+            <div
+              className={`hidden md:flex items-center gap-1.5 font-sans text-maya-label tracking-data transition-colors duration-300 ${ink}`}
+            >
               <Link
                 href={targetPathEs}
                 scroll={false}
-                onClick={() => handleLangTransition("es")}
+                onClick={(e) => handleLangTransition(e, "es", targetPathEs)}
                 className={`transition-opacity duration-200 cursor-pointer ${
                   currentLocale === "es"
                     ? "opacity-100 font-semibold text-accent-ink pointer-events-none"
@@ -233,12 +217,12 @@ export default function Header({ dict, lang }: HeaderProps) {
                 ES
               </Link>
 
-              <span className="h-2 w-px bg-gray-warm/25" />
+              <span className={`h-2 w-px ${divider}`} />
 
               <Link
                 href={targetPathEn}
                 scroll={false}
-                onClick={() => handleLangTransition("en")}
+                onClick={(e) => handleLangTransition(e, "en", targetPathEn)}
                 className={`transition-opacity duration-200 cursor-pointer ${
                   currentLocale === "en"
                     ? "opacity-100 font-semibold text-accent-ink pointer-events-none"
@@ -252,7 +236,7 @@ export default function Header({ dict, lang }: HeaderProps) {
             {/* ENLACE ADMIN */}
             {isAdmin && (
               <>
-                <span className="hidden md:block h-3 w-px bg-gray-warm/20" />
+                <span className={`hidden md:block h-3 w-px ${divider}`} />
                 <Link
                   href="/admin/dashboard"
                   className="hidden md:block font-mono text-maya-label font-normal tracking-nav uppercase transition-opacity duration-300 hover:opacity-70 text-accent-ink whitespace-nowrap"
@@ -266,7 +250,7 @@ export default function Header({ dict, lang }: HeaderProps) {
             <button
               onClick={() => setIsOpen(!isOpen)}
               type="button"
-              className="flex md:hidden p-1.5 focus:outline-none text-gray-warm hover:text-accent-ink transition-colors duration-200 cursor-pointer"
+              className={`flex md:hidden p-1.5 focus:outline-none hover:text-accent-ink transition-colors duration-200 cursor-pointer ${ink}`}
               aria-label={isOpen ? dict.menu_close : dict.menu_open}
               aria-expanded={isOpen}
               aria-controls="mobile-menu"
@@ -287,22 +271,24 @@ export default function Header({ dict, lang }: HeaderProps) {
         </div>
       </div>
 
-      {/* MENÚ MÓVIL DESPLEGABLE FULL-WIDTH CUADRADO */}
+      {/* MENÚ MÓVIL RESPONSIVE EN CUALQUIER ROTACIÓN (0px de altura en reposo) */}
       <div
         id="mobile-menu"
-        className={`md:hidden w-full border-b border-gray-warm/15 bg-black-neutral/98 backdrop-blur-xl px-6 py-8 transition-all duration-300 ease-out ${
+        // Cerrado: fuera del orden de Tab y oculto a lectores de pantalla
+        inert={!isOpen}
+        className={`md:hidden w-full bg-background/98 backdrop-blur-2xl transition-[max-height,opacity] duration-300 ease-out overflow-hidden ${
           isOpen
-            ? "max-h-[85vh] opacity-100 visible border-t border-gray-warm/10"
-            : "max-h-0 opacity-0 invisible overflow-hidden py-0 border-transparent"
+            ? "max-h-[calc(100svh-3.5rem)] opacity-100 border-t border-border-light overflow-y-auto overscroll-contain"
+            : "max-h-0 opacity-0 pointer-events-none"
         }`}
       >
-        <div className="flex flex-col space-y-5">
+        <div className="flex flex-col space-y-4 sm:space-y-5 px-6 py-5 sm:py-7">
           {navItems.map((item) => (
             <Link
               key={item.path}
               href={`/${item.path}`}
               onClick={() => setIsOpen(false)}
-              className="font-sans text-maya-body uppercase tracking-editorial font-light text-gray-warm opacity-85 hover:opacity-100 hover:text-accent-ink transition-all"
+              className="font-sans text-maya-body uppercase tracking-editorial font-light text-text-primary opacity-85 hover:opacity-100 hover:text-accent-ink transition-all"
             >
               {item.label}
             </Link>
@@ -312,25 +298,25 @@ export default function Header({ dict, lang }: HeaderProps) {
             <Link
               href="/admin/dashboard"
               onClick={() => setIsOpen(false)}
-              className="font-mono text-maya-small tracking-data text-accent-ink opacity-90 hover:opacity-100 transition-opacity uppercase pt-2 border-t border-gray-warm/10"
+              className="font-mono text-maya-small tracking-data text-accent-ink opacity-90 hover:opacity-100 transition-opacity uppercase pt-2 border-t border-border-light"
             >
               {dict.admin_panel ?? "Admin"}
             </Link>
           )}
 
-          {/* IDIOMA EN MÓVIL */}
-          <div className="flex items-center gap-4 pt-4 border-t border-gray-warm/10 font-mono text-maya-label tracking-data text-gray-warm/60">
+          {/* SELECTOR IDIOMA EN MÓVIL */}
+          <div className="flex items-center gap-4 pt-3.5 border-t border-border-light font-mono text-maya-label tracking-data text-text-muted">
             <Link
               href={targetPathEs}
               scroll={false}
-              onClick={() => {
-                handleLangTransition("es");
+              onClick={(e) => {
                 setIsOpen(false);
+                handleLangTransition(e, "es", targetPathEs);
               }}
               className={`transition-colors duration-200 cursor-pointer ${
                 currentLocale === "es"
                   ? "text-accent-ink font-semibold pointer-events-none"
-                  : "hover:text-gray-warm"
+                  : "hover:text-text-primary"
               }`}
             >
               ES
@@ -341,14 +327,14 @@ export default function Header({ dict, lang }: HeaderProps) {
             <Link
               href={targetPathEn}
               scroll={false}
-              onClick={() => {
-                handleLangTransition("en");
+              onClick={(e) => {
                 setIsOpen(false);
+                handleLangTransition(e, "en", targetPathEn);
               }}
               className={`transition-colors duration-200 cursor-pointer ${
                 currentLocale === "en"
                   ? "text-accent-ink font-semibold pointer-events-none"
-                  : "hover:text-gray-warm"
+                  : "hover:text-text-primary"
               }`}
             >
               EN

@@ -9,7 +9,6 @@ import BespokeModal from "./BespokeModal";
 import {
   deleteCollectionAction,
   deleteBespokeFinishAction,
-  EditorialBlockData,
   BespokeFinishData,
 } from "./actions";
 
@@ -23,7 +22,7 @@ export interface CollectionItem {
   cover_image?: string;
   video_url?: string;
   gallery_images?: string[];
-  editorial_blocks?: EditorialBlockData[];
+  catalog_url?: string;
   is_active: boolean;
   selected_skus: string[];
   assigned_products: Array<{
@@ -218,8 +217,14 @@ export default function CollectionsManagerClient({
                     <h3 className="font-sans font-medium text-maya-h4 uppercase text-black-neutral">
                       {col.title_es}
                     </h3>
-                    <span className="font-mono text-maya-label text-black-neutral/60 bg-surface px-2.5 py-0.5 rounded-3xs border border-border-light">
-                      {col.editorial_blocks?.length || 0} Bloques
+                    <span
+                      className={`font-mono text-maya-label px-2.5 py-0.5 rounded-3xs border ${
+                        col.catalog_url
+                          ? "text-accent-ink bg-accent-soft border-accent/30"
+                          : "text-black-neutral/50 bg-surface border-border-light"
+                      }`}
+                    >
+                      {col.catalog_url ? "Catálogo PDF ✓" : "Sin catálogo"}
                     </span>
                   </div>
 

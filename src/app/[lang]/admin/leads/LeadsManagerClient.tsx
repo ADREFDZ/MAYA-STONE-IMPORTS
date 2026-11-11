@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Modal } from "@/components/ui/Modal";
+import { resendLeadToCrmAction } from "./actions";
 
 export interface ContactLead {
   id: string;
@@ -11,6 +12,10 @@ export interface ContactLead {
   email: string;
   phone?: string;
   company?: string;
+  location?: string | null;
+  project_name?: string | null;
+  crm_lead_code?: string | null;
+  crm_error?: string | null;
   profile_type?: string;
   contact_reason: "showroom" | "quote" | "samples" | "consulting" | "other";
   category_interest?: string;
@@ -23,9 +28,14 @@ export interface ContactLead {
 
 interface Props {
   initialLeads: ContactLead[];
+  /** slug de colección → nombre (para "Línea de interés") */
+  collectionLabels?: Record<string, string>;
 }
 
-export default function LeadsManagerClient({ initialLeads }: Props) {
+export default function LeadsManagerClient({
+  initialLeads,
+  collectionLabels = {},
+}: Props) {
   const [leads, setLeads] = useState<ContactLead[]>(initialLeads);
   const [selectedLead, setSelectedLead] = useState<ContactLead | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -48,15 +58,53 @@ export default function LeadsManagerClient({ initialLeads }: Props) {
   };
 
   const categoryLabels: Record<string, string> = {
+    ...collectionLabels,
+    wood: "Rivas Wood",
+    bespoke: "Bespoke / Servicios a medida",
+    other: "Otro",
+    // Valores anteriores del formulario
     all: "Catálogo General",
     stone: "Piedras Naturales",
-    wood: "Maderas Nobles",
-    bespoke: "Piezas Bespoke",
+  };
+
+  const profileLabels: Record<string, string> = {
+    // Tipos de cliente del CRM (formulario actual)
+    arquitecto: "Arquitecto",
+    interiorista: "Interiorista",
+    desarrollador: "Desarrollador",
+    marmolero: "Marmolero",
+    cliente_final: "Cliente final",
+    comercializadora: "Comercializadora",
+    otro: "Otro",
+    // Valores anteriores del formulario
+    architecture: "Despacho de arquitectura",
+    interior: "Estudio de interiorismo",
+    developer: "Desarrolladora inmobiliaria",
+    construction: "Constructora",
+    private: "Cliente particular",
+    other: "Otro",
+    // Valor anterior del formulario
+    architect: "Arquitecto / Diseñador",
   };
 
   useEffect(() => {
     setLeads(initialLeads);
   }, [initialLeads]);
+
+  const [isResending, setIsResending] = useState(false);
+  const handleResendToCrm = async () => {
+    if (!selectedLead) return;
+    setIsResending(true);
+    const res = await resendLeadToCrmAction(selectedLead.id);
+    setIsResending(false);
+    const patch: Partial<ContactLead> = res.success
+      ? { crm_lead_code: res.code, crm_error: null }
+      : { crm_error: res.error };
+    setLeads((prev) =>
+      prev.map((l) => (l.id === selectedLead.id ? { ...l, ...patch } : l)),
+    );
+    setSelectedLead((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
 
   useEffect(() => {
     if (!selectedLead) return;
@@ -210,6 +258,11 @@ export default function LeadsManagerClient({ initialLeads }: Props) {
               {row.company}
             </p>
           )}
+          {row.profile_type && (
+            <p className="font-mono text-maya-label text-accent-ink/80 uppercase">
+              {profileLabels[row.profile_type] || row.profile_type}
+            </p>
+          )}
         </div>
       ),
     },
@@ -290,7 +343,11 @@ export default function LeadsManagerClient({ initialLeads }: Props) {
               count: counts.consulting,
             },
             { key: "other", label: "Otros", count: counts.other },
-          ].map((tab) => {
+          ]
+            // "Consultoría" ya no existe en el formulario: solo se muestra si
+            // hay solicitudes antiguas con ese motivo.
+            .filter((tab) => tab.key !== "consulting" || tab.count > 0)
+            .map((tab) => {
             const isActive = activeReasonFilter === tab.key;
             return (
               <button
@@ -368,6 +425,38 @@ export default function LeadsManagerClient({ initialLeads }: Props) {
                         {selectedLead.company}
                       </p>
                     )}
+                    {(selectedLead.project_name || selectedLead.location) && (
+                      <p className="font-sans text-maya-small text-black-neutral/70 mt-1">
+                        {[selectedLead.project_name, selectedLead.location]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    )}
+                    {/* ESTADO EN EL CRM DE MAYA */}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {selectedLead.crm_lead_code ? (
+                        <span className="px-2 py-0.5 font-mono text-maya-label uppercase tracking-data rounded-3xs border bg-emerald-50 text-emerald-800 border-emerald-200">
+                          En CRM · {selectedLead.crm_lead_code}
+                        </span>
+                      ) : (
+                        <>
+                          <span
+                            title={selectedLead.crm_error || undefined}
+                            className="px-2 py-0.5 font-mono text-maya-label uppercase tracking-data rounded-3xs border bg-amber-50 text-amber-900 border-amber-200"
+                          >
+                            No enviado al CRM
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleResendToCrm}
+                            disabled={isResending}
+                            className="px-2 py-0.5 font-mono text-maya-label uppercase tracking-data rounded-3xs border border-black-neutral text-black-neutral hover:bg-black-neutral hover:text-gray-warm transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            {isResending ? "Enviando…" : "Enviar al CRM"}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   <span
@@ -399,6 +488,28 @@ export default function LeadsManagerClient({ initialLeads }: Props) {
                     </span>
                     <p className="font-mono text-black-neutral font-medium mt-0.5 select-all text-maya-small">
                       {selectedLead.phone || "No registrado"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="font-mono text-maya-label uppercase tracking-data text-black-neutral/50 block font-semibold">
+                      Perfil
+                    </span>
+                    <p className="font-sans text-black-neutral font-medium mt-0.5 text-maya-small">
+                      {profileLabels[selectedLead.profile_type || ""] ||
+                        selectedLead.profile_type ||
+                        "No registrado"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="font-mono text-maya-label uppercase tracking-data text-black-neutral/50 block font-semibold">
+                      Línea de interés
+                    </span>
+                    <p className="font-sans text-black-neutral font-medium mt-0.5 text-maya-small">
+                      {categoryLabels[selectedLead.category_interest || ""] ||
+                        selectedLead.category_interest ||
+                        "No indicada"}
                     </p>
                   </div>
                 </div>

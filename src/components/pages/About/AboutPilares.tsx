@@ -48,11 +48,14 @@ export default function AboutPilares({ dict }: AboutPilaresProps) {
           >
             {dict.items.map((pilar, index) => {
               const formattedIndex = String(index + 1).padStart(2, "0");
+              // Si el número de pilares es impar, el último ocupa las 2 columnas
+              const isLastOdd =
+                dict.items.length % 2 === 1 && index === dict.items.length - 1;
 
               return (
                 <article
                   key={index}
-                  className="group flex flex-col justify-start w-full shrink-0 snap-start sm:w-auto sm:shrink sm:snap-none p-6 sm:p-8 lg:p-10 border-r border-b border-border-light transition-colors duration-500 hover:bg-surface/50 min-h-[220px] sm:min-h-[260px]"
+                  className={`group flex flex-col justify-start w-full shrink-0 snap-start sm:w-auto sm:shrink sm:snap-none ${isLastOdd ? "sm:col-span-2" : ""} p-6 sm:p-8 lg:p-10 border-r border-b border-border-light transition-colors duration-500 hover:bg-surface/50 min-h-[220px] sm:min-h-[260px]`}
                 >
                   <div className="flex items-center gap-2.5 mb-4 sm:mb-6">
                     <span className="font-mono text-maya-label tracking-data text-accent-ink font-semibold">

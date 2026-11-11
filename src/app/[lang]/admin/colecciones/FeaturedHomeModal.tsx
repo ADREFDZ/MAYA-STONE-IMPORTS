@@ -8,6 +8,7 @@ import {
   deleteMaterialRenderAction,
   updateFeaturedMaterialDetailsAction,
 } from "./actions";
+import { convertToWebP } from "@/lib/utils/media";
 
 interface RenderItem {
   id: string;
@@ -33,62 +34,6 @@ interface FeaturedHomeModalProps {
   } | null;
 }
 
-async function optimizeAndConvertToWebP(
-  file: File,
-  maxWidth = 2560,
-  quality = 0.92,
-): Promise<File> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          reject(new Error("No se pudo obtener el contexto del canvas."));
-          return;
-        }
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error("Error al generar el Blob WebP."));
-              return;
-            }
-            const webpFile = new File(
-              [blob],
-              file.name.replace(/\.[^/.]+$/, "") + ".webp",
-              { type: "image/webp" },
-            );
-            resolve(webpFile);
-          },
-          "image/webp",
-          quality,
-        );
-      };
-      img.onerror = (err) => reject(err);
-    };
-    reader.onerror = (err) => reject(err);
-  });
-}
 
 export default function FeaturedHomeModal({
   isOpen,
@@ -208,7 +153,7 @@ export default function FeaturedHomeModal({
 
     setUploadingRender(true);
     try {
-      const optimizedFile = await optimizeAndConvertToWebP(selectedFile);
+      const optimizedFile = await convertToWebP(selectedFile);
 
       const formData = new FormData();
       formData.append("file", optimizedFile);
@@ -499,7 +444,7 @@ export default function FeaturedHomeModal({
                 Subir Render de Aplicación (Optimización WebP Automática)
               </label>
               <p className="text-maya-label text-black-neutral/50 mt-0.5">
-                Las imágenes se escalan a máx. 2560px y se comprimen a WebP.
+                Las imágenes se guardan en alta calidad (hasta 4096 px).
               </p>
             </div>
 

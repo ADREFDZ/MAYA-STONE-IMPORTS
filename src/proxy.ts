@@ -297,20 +297,28 @@ export async function updateSession(request: NextRequest) {
   const rewriteUrl = new URL(internalPath, request.url);
   rewriteUrl.search = request.nextUrl.search;
 
-  supabaseResponse = NextResponse.rewrite(rewriteUrl, {
+  // La respuesta final se crea con los headers de la petición (que ya traen
+  // las cookies renovadas por Supabase en setAll) y se le COPIAN las cookies
+  // de sesión: antes se creaba una respuesta nueva y se perdían, lo que podía
+  // cerrar la sesión del panel o forzar renovaciones en cada visita.
+  const finalResponse = NextResponse.rewrite(rewriteUrl, {
     request: {
       headers: request.headers,
     },
   });
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    finalResponse.cookies.set(cookie);
+  });
 
-  setLocaleCookie(supabaseResponse);
-  return supabaseResponse;
+  setLocaleCookie(finalResponse);
+  return finalResponse;
 }
 
 export const config = {
   matcher: [
     // Excluye estáticos y archivos de metadatos (robots, sitemap, iconos, manifest)
     // para que el proxy no los reescriba a /[lang]/... y respondan 404.
-    "/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm|ogg|mov|m4v|avi|wav|pdf|otf|ttf|woff|woff2|xml|txt|webmanifest)$).*)",
+    // ffmpeg/ = worker del compresor de video del admin (archivos .js/.wasm).
+    "/((?!_next/static|_next/image|ffmpeg/|favicon.ico|icon.png|apple-icon.png|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm|ogg|mov|m4v|avi|wav|pdf|otf|ttf|woff|woff2|xml|txt|webmanifest|js|mjs|wasm)$).*)",
   ],
 };

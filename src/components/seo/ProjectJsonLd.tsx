@@ -58,7 +58,10 @@ export default function ProjectJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{
+        // "<" escapado: un texto con "</script>" no puede romper la etiqueta
+        __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
+      }}
     />
   );
 }

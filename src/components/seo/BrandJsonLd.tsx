@@ -2,7 +2,16 @@ import type { Locale } from "@/lib/i18n/routes";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gpomaya.com";
 
-export default function BrandJsonLd({ lang }: { lang: Locale }) {
+interface BrandJsonLdProps {
+  lang: Locale;
+  dict: {
+    description: string;
+    slogan: string;
+    knows_about: string[];
+  };
+}
+
+export default function BrandJsonLd({ lang, dict }: BrandJsonLdProps) {
   const isEs = lang === "es";
 
   const schema = {
@@ -15,14 +24,10 @@ export default function BrandJsonLd({ lang }: { lang: Locale }) {
     url: SITE_URL,
     logo: `${SITE_URL}/images/MAYA_LOGOTIPO_LIGHT.png`,
     image: `${SITE_URL}/images/og-main.jpg`,
-    description: isEs
-      ? "Grupo de estudios dedicados a la curaduría de la materia: mármoles, cuarcitas, travertinos, granitos y maderas nobles para la arquitectura y el interiorismo."
-      : "A collective of studios dedicated to the curation of natural matter: marble, quartzite, travertine, granite, and noble timber for architecture and interior design.",
-    slogan: isEs
-      ? "Naturaleza redefinida como objeto de diseño."
-      : "Nature redefined as a design object.",
-    telephone: "+52 477 854 4033",
-    email: "hola@gpomaya.com",
+    description: dict.description,
+    slogan: dict.slogan,
+    telephone: "+52 477 704 0874",
+    email: "info@gpomaya.com",
     priceRange: "$$$$",
     address: {
       "@type": "PostalAddress",
@@ -47,34 +52,17 @@ export default function BrandJsonLd({ lang }: { lang: Locale }) {
       },
     ],
     sameAs: ["https://www.instagram.com/gpo.maya"],
-    knowsAbout: isEs
-      ? [
-          "Superficies naturales para arquitectura",
-          "Curaduría de piedra natural",
-          "Mármoles y cuarcitas de origen",
-          "Travertino de alta gama",
-          "Maderas nobles para interiorismo",
-          "Mármol de alta gama en México",
-          "Cuarcitas importadas",
-          "Interiorismo de lujo",
-        ]
-      : [
-          "Natural surfaces for architecture",
-          "Natural stone curation",
-          "Marble and quartzite sourcing",
-          "High-end travertine",
-          "Fine hardwoods for interior design",
-          "Luxury marble in Mexico",
-          "Imported quartzite",
-          "Luxury interior design",
-        ],
+    knowsAbout: dict.knows_about,
     inLanguage: isEs ? "es-MX" : "en-US",
   };
 
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{
+        // "<" escapado: un texto con "</script>" no puede romper la etiqueta
+        __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
+      }}
     />
   );
 }

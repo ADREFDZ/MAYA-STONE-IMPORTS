@@ -29,6 +29,7 @@ export default function ArchitectureFilter({
       onSelect={onSelectCategory}
       headerLabel={dockLabel}
       scrollTarget="archive-grid"
+      triggerTarget="archive-grid" // <-- No aparecerá mientras estés en el Hero
       scrollOffset={-80}
     />
   );

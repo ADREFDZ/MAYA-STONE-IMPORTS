@@ -92,15 +92,11 @@ export default async function AdminColeccionesPage({ params }: Props) {
       description_en: descObj.en || col.description_en || "",
       cover_image: col.cover_image || "",
       logo_url: col.logo_url || "",
+      catalog_url: col.catalog_url || "",
       video_url: col.video_url || "",
       gallery_images: Array.isArray(col.gallery_images)
         ? col.gallery_images
         : [],
-      editorial_blocks: Array.isArray(col.editorial_blocks)
-        ? col.editorial_blocks
-        : typeof col.editorial_blocks === "string"
-          ? JSON.parse(col.editorial_blocks || "[]")
-          : [],
       is_active: col.is_active,
       selected_skus: sortedProducts.map((p: any) => p.sku),
       assigned_products: sortedProducts,

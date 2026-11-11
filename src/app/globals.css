@@ -9,9 +9,11 @@
   /* -----------------------------------------
      01. Containers & Gutters
      ----------------------------------------- */
-  --maya-container-wide: 1440px;
-  --maya-container: 1280px;
-  --maya-container-narrow: 960px;
+  /* Ajustados (nov 2026): en laptops 1920px el contenido se veía
+     sobredimensionado. 1200px mantiene imágenes nítidas y lectura cómoda. */
+  --maya-container-wide: 1200px;
+  --maya-container: 1120px;
+  --maya-container-narrow: 880px;
   --maya-container-reading: 720px;
 
   --maya-gutter-mobile: 1rem;
@@ -22,10 +24,10 @@
   /* -----------------------------------------
      02. Fluid Typography Scale (Mobile Calibrated)
      ----------------------------------------- */
-  --maya-type-display: clamp(1.875rem, 4.2vw, 3.75rem);
-  --maya-type-h1: clamp(1.5rem, 3.4vw, 3rem);
-  --maya-type-h2: clamp(1.25rem, 2.5vw, 2.25rem);
-  --maya-type-h3: clamp(1.05rem, 1.8vw, 1.625rem);
+  --maya-type-display: clamp(1.875rem, 3.6vw, 3.25rem);
+  --maya-type-h1: clamp(1.5rem, 2.9vw, 2.625rem);
+  --maya-type-h2: clamp(1.25rem, 2.1vw, 1.875rem);
+  --maya-type-h3: clamp(1.05rem, 1.5vw, 1.375rem);
   --maya-type-h4: clamp(0.875rem, 1.2vw, 1.1875rem);
   --maya-type-body-lg: clamp(0.875rem, 1.05vw, 1.0625rem);
   --maya-type-body: clamp(0.8125rem, 0.9vw, 0.9375rem);
@@ -45,9 +47,9 @@
   /* -----------------------------------------
      03. Spacing & Rhythm
      ----------------------------------------- */
-  --maya-space-section: clamp(3.5rem, 7vw, 7.5rem);
-  --maya-space-block: clamp(2rem, 4.5vw, 4.5rem);
-  --maya-space-content: clamp(1rem, 2vw, 2.25rem);
+  --maya-space-section: clamp(3rem, 5vw, 5.5rem);
+  --maya-space-block: clamp(1.75rem, 3.2vw, 3.25rem);
+  --maya-space-content: clamp(1rem, 1.6vw, 1.75rem);
 }
 
 /* =========================================
@@ -104,6 +106,28 @@
 /* =========================================
    ESTILOS BASE
    ========================================= */
+
+/* Selección de texto global (bronce de marca + blanco: 4.6:1) */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-white, #fff);
+}
+
+/* Select nativo con flecha propia (appearance-none la elimina) */
+@utility select-chevron {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23252525' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  background-size: 0.875rem;
+}
+/* Reserva el espacio de la barra de scroll: al bloquear el scroll (modales,
+   panel de colección) la página no "salta" de ancho en escritorio. */
+html {
+  scrollbar-gutter: stable;
+}
+
 html,
 body {
   width: 100%;
@@ -228,6 +252,27 @@ input::-webkit-credentials-auto-fill-button {
   right: 0 !important;
 }
 
+/* Ficha técnica de material: entrada suave al cambiar de material */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes indeterminate {
   0% {
     left: -50%;
@@ -254,5 +299,45 @@ input::-webkit-credentials-auto-fill-button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================
+   COLECCIONES (HOME) · BRILLO EN TÁCTIL
+   Solo dispositivos sin hover; se apaga con "reducir movimiento".
+   El halo usa un degradado radial (más barato que blur en GPU móvil).
+   ========================================= */
+.bento-sheen {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.2) 30%,
+    var(--col-accent) 60%,
+    transparent 100%
+  );
+  animation: bento-sheen 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.bento-glow {
+  background: radial-gradient(
+    closest-side,
+    var(--col-accent),
+    transparent
+  );
+  animation: bento-glow 5.5s ease-in-out infinite alternate;
+}
+@keyframes bento-sheen {
+  0% { transform: translateX(-120%) skewX(-15deg); opacity: 0; }
+  25%, 75% { opacity: 0.3; }
+  100% { transform: translateX(320%) skewX(-15deg); opacity: 0; }
+}
+@keyframes bento-glow {
+  0% { transform: translateX(-30%); opacity: 0.15; }
+  100% { transform: translateX(180%); opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-sheen,
+  .bento-glow {
+    animation: none;
+    opacity: 0;
   }
 }

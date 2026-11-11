@@ -14,19 +14,15 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const isEs = lang === "es";
+  const { seo } = await getDictionary(lang);
 
   const currentSlug = ROUTES.arquitectura[lang];
   const esSlug = ROUTES.arquitectura.es;
   const enSlug = ROUTES.arquitectura.en;
 
   return {
-    title: isEs
-      ? "De la Intención a la Materia | Obras y Aplicaciones Arquitectónicas"
-      : "From Architectural Intent to Matter | Landmark Works & Bespoke Craft",
-    description: isEs
-      ? "Proyectos residenciales, hospitalidad y desarrollos emblemáticos intervenidos con materia natural: St. Regis Costa Mujeres, Amanvari Los Cabos, Maena y residencias privadas."
-      : "High-end residential and luxury hospitality projects crafted with natural stone and fine timber: St. Regis, Amanvari, and bespoke private estates.",
+    title: seo.architecture.title,
+    description: seo.architecture.description,
     alternates: {
       canonical: `${SITE_URL}/${currentSlug}`,
       languages: {
@@ -36,12 +32,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
-      title: isEs
-        ? "Arquitectura y Proyectos | MAYA"
-        : "Architecture & Landmark Projects | MAYA",
-      description: isEs
-        ? "Donde la precisión constructiva y los materiales naturales sostienen una estética duradera."
-        : "Where architectural precision and authentic natural materials sustain lasting permanence.",
+      title: seo.architecture.og_title,
+      description: seo.architecture.og_description,
       url: `${SITE_URL}/${currentSlug}`,
     },
   };

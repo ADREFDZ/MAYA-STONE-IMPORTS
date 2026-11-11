@@ -5,20 +5,6 @@ import { requireAdmin } from "@/lib/supabase/requireAdmin";
 import { revalidatePath } from "next/cache";
 import { invalidatePublicCache } from "@/lib/data/public";
 
-export interface EditorialBlockData {
-  id: string;
-  title: string;
-  title_en?: string;
-  subtitle?: string;
-  subtitle_en?: string;
-  content: string;
-  content_en?: string;
-  curatorialNote?: string;
-  curatorialNote_en?: string;
-  bullets?: string[];
-  imageUrl?: string;
-}
-
 export interface CollectionFormData {
   id?: string;
   title_es: string;
@@ -34,7 +20,8 @@ export interface CollectionFormData {
   cover_image?: string;
   video_url?: string;
   gallery_images?: string[];
-  editorial_blocks?: EditorialBlockData[];
+  /** PDF del catálogo digital (descargable al final de la colección) */
+  catalog_url?: string;
   is_active: boolean;
   selected_skus: string[];
 }
@@ -92,8 +79,8 @@ export async function uploadCollectionCoverAction(formData: FormData) {
     const { error: uploadError } = await supabase.storage
       .from("materials")
       .upload(filePath, file, {
-        contentType: "image/webp",
-        cacheControl: "3600",
+        contentType: file.type || "image/webp",
+        cacheControl: "31536000",
         upsert: true,
       });
 
@@ -136,7 +123,7 @@ export async function uploadCollectionLogoAction(formData: FormData) {
       .from("materials")
       .upload(filePath, file, {
         contentType: file.type || "image/webp",
-        cacheControl: "3600",
+        cacheControl: "31536000",
         upsert: true,
       });
 
@@ -159,48 +146,6 @@ export async function uploadCollectionLogoAction(formData: FormData) {
   }
 }
 
-export async function uploadCollectionGalleryAction(formData: FormData) {
-  try {
-    const guard = await requireAdmin();
-    if (!guard.authorized) return { success: false, error: guard.error };
-
-    const file = formData.get("file") as File;
-    const slug = formData.get("slug") as string;
-
-    if (!file || !slug) {
-      return { success: false, error: "Archivo y Slug son requeridos." };
-    }
-
-    const supabase = await createClient();
-    const cleanSlug = slug.trim().replace(/[^a-zA-Z0-9_-]/g, "");
-    const fileName = `gallery-${Date.now()}-${Math.random().toString(36).substring(2, 6)}.webp`;
-    const filePath = `collections/${cleanSlug}/gallery/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("materials")
-      .upload(filePath, file, {
-        contentType: "image/webp",
-        cacheControl: "3600",
-        upsert: true,
-      });
-
-    if (uploadError) return { success: false, error: uploadError.message };
-
-    const { data: publicData } = supabase.storage
-      .from("materials")
-      .getPublicUrl(filePath);
-
-    return {
-      success: true,
-      url: `${publicData.publicUrl}?t=${Date.now()}`,
-    };
-  } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Error al subir imagen a galería.";
-    return { success: false, error: message };
-  }
-}
-
 export async function saveCollectionAction(data: CollectionFormData) {
   try {
     const guard = await requireAdmin();
@@ -212,7 +157,7 @@ export async function saveCollectionAction(data: CollectionFormData) {
     if (collectionId) {
       const { data: oldCol } = await supabase
         .from("collections")
-        .select("cover_image, logo_url, video_url, gallery_images")
+        .select("cover_image, logo_url, video_url, gallery_images, catalog_url")
         .eq("id", collectionId)
         .single();
 
@@ -226,6 +171,11 @@ export async function saveCollectionAction(data: CollectionFormData) {
 
         if (oldCol.logo_url && oldCol.logo_url !== data.logo_url) {
           const path = getStoragePathFromUrl(oldCol.logo_url);
+          if (path) pathsToDelete.push(path);
+        }
+
+        if (oldCol.catalog_url && oldCol.catalog_url !== data.catalog_url) {
+          const path = getStoragePathFromUrl(oldCol.catalog_url);
           if (path) pathsToDelete.push(path);
         }
 
@@ -251,22 +201,6 @@ export async function saveCollectionAction(data: CollectionFormData) {
         }
       }
     }
-
-    const normalizedEditorialBlocks = (data.editorial_blocks || []).map(
-      (b) => ({
-        id: b.id,
-        title: b.title || "",
-        title_en: b.title_en || "",
-        subtitle: b.subtitle || "",
-        subtitle_en: b.subtitle_en || "",
-        content: b.content || "",
-        content_en: b.content_en || "",
-        curatorialNote: b.curatorialNote || "",
-        curatorialNote_en: b.curatorialNote_en || "",
-        bullets: Array.isArray(b.bullets) ? b.bullets : [],
-        imageUrl: b.imageUrl || "",
-      }),
-    );
 
     const payload = {
       title: { es: data.title_es, en: data.title_en || data.title_es },
@@ -297,7 +231,7 @@ export async function saveCollectionAction(data: CollectionFormData) {
       cover_image: data.cover_image || null,
       video_url: data.video_url || null,
       gallery_images: data.gallery_images || [],
-      editorial_blocks: normalizedEditorialBlocks,
+      catalog_url: data.catalog_url || null,
       is_active: data.is_active,
       updated_at: new Date().toISOString(),
     };
@@ -361,7 +295,7 @@ export async function deleteCollectionAction(id: string) {
 
     const { data: col } = await supabase
       .from("collections")
-      .select("cover_image, logo_url, video_url, gallery_images")
+      .select("cover_image, logo_url, video_url, gallery_images, catalog_url")
       .eq("id", id)
       .single();
 
@@ -375,6 +309,11 @@ export async function deleteCollectionAction(id: string) {
 
       if (col.logo_url) {
         const path = getStoragePathFromUrl(col.logo_url);
+        if (path) pathsToDelete.push(path);
+      }
+
+      if (col.catalog_url) {
+        const path = getStoragePathFromUrl(col.catalog_url);
         if (path) pathsToDelete.push(path);
       }
 
@@ -502,8 +441,8 @@ export async function uploadMaterialRenderAction(formData: FormData) {
     const { error: uploadError } = await supabase.storage
       .from("materials")
       .upload(filePath, file, {
-        contentType: "image/webp",
-        cacheControl: "3600",
+        contentType: file.type || "image/webp",
+        cacheControl: "31536000",
         upsert: true,
       });
 
@@ -653,8 +592,8 @@ export async function uploadBespokeImageAction(formData: FormData) {
     const { error: uploadError } = await supabase.storage
       .from("materials")
       .upload(filePath, file, {
-        contentType: "image/webp",
-        cacheControl: "3600",
+        contentType: file.type || "image/webp",
+        cacheControl: "31536000",
         upsert: true,
       });
 

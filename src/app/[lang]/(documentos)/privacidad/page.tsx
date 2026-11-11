@@ -15,17 +15,15 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const isEs = lang === "es";
   const dict = await getDictionary(lang);
   const currentSlug = ROUTES.privacidad[lang];
 
   return {
     // Sin " | MAYA" al final para evitar duplicación
     title:
-      dict.privacy_page?.title ||
-      (isEs ? "Aviso de Privacidad" : "Privacy Policy"),
+      dict.privacy_page?.title,
     description:
-      dict.privacy_page?.sections?.[0]?.content || "Aviso de Privacidad MAYA",
+      dict.privacy_page.sections[0].content,
     alternates: {
       canonical: `${SITE_URL}/${currentSlug}`,
       languages: {
@@ -46,7 +44,6 @@ export default async function PrivacyPage({ params }: Props) {
   const currentLocale: Locale = lang === "en" ? "en" : "es";
   const dict = await getDictionary(currentLocale);
   const pDict = dict.privacy_page;
-  const isEs = currentLocale === "es";
 
   const sections: Array<{
     title: string;
@@ -59,16 +56,10 @@ export default async function PrivacyPage({ params }: Props) {
       <div className="editorial-container space-y-10 sm:space-y-14 max-w-4xl">
         <header className="border-b border-border-light pb-6 sm:pb-8 space-y-3">
           <SectionLabel variant="minimal" theme="accent">
-            {pDict?.meta ||
-              (isEs
-                ? "CUMPLIMIENTO LEGAL & PRIVACIDAD"
-                : "LEGAL COMPLIANCE & PRIVACY")}
+            {pDict?.meta}
           </SectionLabel>
           <h1 className="font-sans font-light tracking-editorial text-maya-h1 sm:text-maya-display uppercase text-black-neutral">
-            {pDict?.title ||
-              (isEs
-                ? "Aviso de Privacidad Integral"
-                : "Comprehensive Privacy Notice")}
+            {pDict?.title}
           </h1>
           <p className="font-mono text-maya-label uppercase tracking-data text-black-neutral/50">
             {pDict?.last_updated}
@@ -102,10 +93,7 @@ export default async function PrivacyPage({ params }: Props) {
         <div className="border-t border-border-light pt-6">
           <BackButton
             label={
-              pDict?.back_button ||
-              (isEs
-                ? "Volver a la página anterior"
-                : "Go back to previous page")
+              pDict?.back_button
             }
           />
         </div>

@@ -4,7 +4,7 @@ interface CollectionLogoTitleProps {
   title: string;
   /** Isotipo/logotipo de la colección (admin → Colecciones → Logotipo/Isotipo) */
   logoUrl?: string | null;
-  as?: "h1" | "h2" | "h3";
+  as?: "h1" | "h2" | "h3" | "h4" | "p";
   className?: string;
   imgClassName?: string;
   style?: React.CSSProperties;

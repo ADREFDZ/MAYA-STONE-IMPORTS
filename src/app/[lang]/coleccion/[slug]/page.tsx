@@ -7,6 +7,7 @@ import CollectionSection from "@/components/pages/Collection/CollectionSection";
 import CollectionCTA from "@/components/pages/Collection/CollectionCTA";
 import CollectionJsonLd from "@/components/seo/CollectionJsonLd";
 import Button from "@/components/ui/Button";
+import { fillTemplate } from "@/lib/utils/strings";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gpomaya.com";
 
@@ -129,9 +130,10 @@ export async function generateMetadata({
       c.id?.toLowerCase() === cleanSlug,
   );
 
-  if (!collection) return { title: "Colección no encontrada" };
+  const { seo } = await getDictionary(lang);
 
-  const isEs = lang === "es";
+  if (!collection) return { title: seo.collection.not_found };
+
   const currentParent = ROUTES.coleccion[lang];
   const esParent = ROUTES.coleccion.es;
   const enParent = ROUTES.coleccion.en;
@@ -142,22 +144,23 @@ export async function generateMetadata({
 
     if (selectedMat) {
       const matTitle = selectedMat.aka || selectedMat.name;
-      const title = isEs
-        ? `${matTitle} · Colección ${formattedColTitle}`
-        : `${matTitle} · ${formattedColTitle} Collection`;
+      const title = fillTemplate(seo.collection.material_title, {
+        material: matTitle,
+        collection: formattedColTitle,
+      });
 
       const categoryText = selectedMat.category
         ? selectedMat.category.toLowerCase()
-        : isEs
-          ? "piedra natural"
-          : "natural stone";
+        : seo.collection.category_fallback;
       const originText = selectedMat.origin ? ` (${selectedMat.origin})` : "";
 
       const description =
         selectedMat.description ||
-        (isEs
-          ? `${matTitle}, ${categoryText}${originText}. Superficie natural curada para arquitectura y diseño de alta permanencia.`
-          : `${matTitle}, curated ${categoryText}${originText}. Natural architectural surface selected for enduring permanence.`);
+        fillTemplate(seo.collection.material_description, {
+          material: matTitle,
+          category: categoryText,
+          origin: originText,
+        });
 
       const fullCanonical = `${SITE_URL}/${currentParent}/${collection.slug}?material=${materialQuery}`;
       const matImage =
@@ -197,18 +200,19 @@ export async function generateMetadata({
     }
   }
 
-  const title = isEs
-    ? `Colección ${formattedColTitle} · Curaduría de Materia`
-    : `${formattedColTitle} Collection · Curation of Matter`;
+  const title = fillTemplate(seo.collection.collection_title, {
+    collection: formattedColTitle,
+  });
 
   const sampleMaterials = (collection.materials || [])
     .slice(0, 4)
     .map((m) => m.aka || m.name)
     .join(", ");
 
-  const description = isEs
-    ? `Colección ${formattedColTitle}: ${sampleMaterials}. Materia natural seleccionada por su narrativa geológica, inercia térmica y permanencia estética.`
-    : `${formattedColTitle} Collection: ${sampleMaterials}. Natural surfaces curated for geological narrative, thermal inertia, and timeless architecture.`;
+  const description = fillTemplate(seo.collection.collection_description, {
+    collection: formattedColTitle,
+    materials: sampleMaterials,
+  });
 
   return {
     title,
@@ -268,20 +272,13 @@ export default async function SingleCollectionPage({ params }: Props) {
 
   return (
     <main
-      className={`min-h-screen pt-24 sm:pt-28 selection:bg-accent selection:text-white transition-colors duration-700 overflow-x-clip ${themeClass}`}
-      style={{
-        backgroundColor: "var(--col-bg, var(--color-surface))",
-        color: "var(--col-text, var(--col-contrast, #252525))",
-      }}
+      className={`collection-surface min-h-screen pt-24 sm:pt-28 selection:bg-accent selection:text-white transition-colors duration-700 overflow-x-clip ${themeClass}`}
     >
       <CollectionJsonLd collection={collection} lang={currentLocale} />
 
       {/* ENLACE DE RETORNO EDITORIAL */}
       <div
-        className="editorial-container pb-4 sm:pb-6 border-b transition-colors duration-500"
-        style={{
-          borderColor: "var(--col-border, rgba(255,255,255,0.15))",
-        }}
+        className="border-col-border editorial-container pb-4 sm:pb-6 border-b transition-colors duration-500"
       >
         <Button
           href={`/${ROUTES.coleccion[currentLocale]}`}
@@ -289,18 +286,14 @@ export default async function SingleCollectionPage({ params }: Props) {
           size="sm"
           icon={<span className="text-xs">←</span>}
           iconPosition="left"
-          className="!font-mono !text-maya-label !tracking-data uppercase opacity-85 hover:opacity-100 transition-opacity"
-          style={{
-            color: "var(--col-text, var(--col-contrast, currentColor))",
-          }}
+          className="text-col-text !font-mono !text-maya-label !tracking-data uppercase opacity-85 hover:opacity-100 transition-opacity"
         >
-          {lang === "es"
-            ? "Volver a Todas las Colecciones"
-            : "Back to All Collections"}
+          {dict.collection_page.back_to_all}
         </Button>
       </div>
 
-      <div className="editorial-container py-8 sm:py-12 lg:py-16">
+      {/* CollectionSection maneja sus propios anchos (editorial / márgenes del header) */}
+      <div className="py-8 sm:py-12 lg:py-16">
         <CollectionSection
           collection={collection}
           lang={lang}

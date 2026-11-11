@@ -75,21 +75,24 @@ export default function ProjectEditorialSpread({
         >
           {/* FOTOGRAFÍA PRINCIPAL */}
           <div className={`lg:col-span-7 ${isEven ? "lg:col-start-6" : ""}`}>
-            <div
+            <button
+              type="button"
               onClick={() => onOpenDossier(project)}
-              className="relative aspect-16/10 w-full overflow-hidden bg-surface border border-border-light cursor-pointer group rounded-2xs shadow-xs"
+              aria-label={`${cardActionText}: ${title}`}
+              className="relative block aspect-16/10 w-full overflow-hidden bg-surface border border-border-light cursor-pointer group rounded-2xs shadow-xs focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
               {coverImageSrc && (
                 <Image
                   src={coverImageSrc}
                   alt={title}
                   fill
-                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  sizes="(max-width: 1024px) 100vw, 800px"
+                  quality={90}
                   className="object-cover group-hover:scale-103 transition-transform duration-1000 ease-out"
                 />
               )}
               <div className="absolute inset-0 bg-black-neutral/0 group-hover:bg-black-neutral/5 transition-colors duration-500" />
-            </div>
+            </button>
           </div>
 
           {/* COLUMNA NARRATIVA */}
@@ -135,7 +138,8 @@ export default function ProjectEditorialSpread({
             </div>
 
             {previewGallery.length > 0 && (
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+              <div aria-hidden="true" className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+                {/* Vista previa decorativa: el botón de abajo ofrece la misma acción */}
                 {previewGallery.map((imgUrl, i) => (
                   <div
                     key={i}
@@ -146,7 +150,7 @@ export default function ProjectEditorialSpread({
                       src={cleanImageUrl(imgUrl)}
                       alt={`${title} · ${i + 1}`}
                       fill
-                      sizes="(max-width: 1024px) 50vw, 20vw"
+                      sizes="(max-width: 1024px) 50vw, 280px"
                       className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     />
                     <div className="absolute inset-0 bg-black-neutral/0 group-hover:bg-black-neutral/5 transition-colors duration-500" />

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Originales de alta resolución (no se publican)
 /_originales/
+
+# Respaldos locales
+/_respaldo-*/

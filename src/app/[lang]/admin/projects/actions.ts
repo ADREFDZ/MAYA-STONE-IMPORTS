@@ -52,8 +52,8 @@ export async function uploadProjectCoverAction(formData: FormData) {
     const { error } = await supabase.storage
       .from("projects")
       .upload(filePath, file, {
-        contentType: "image/webp",
-        cacheControl: "3600",
+        contentType: file.type || "image/webp",
+        cacheControl: "31536000",
         upsert: true,
       });
 
@@ -87,8 +87,8 @@ export async function uploadProjectGalleryAction(formData: FormData) {
     const { error } = await supabase.storage
       .from("projects")
       .upload(filePath, file, {
-        contentType: "image/webp",
-        cacheControl: "3600",
+        contentType: file.type || "image/webp",
+        cacheControl: "31536000",
         upsert: true,
       });
 

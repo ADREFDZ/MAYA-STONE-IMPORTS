@@ -158,7 +158,7 @@ export default function ProjectModal({ isOpen, onClose, initialData }: Props) {
 
     try {
       for (let i = 0; i < files.length; i++) {
-        const optimized = await convertToWebP(files[i], 2560, 0.92);
+        const optimized = await convertToWebP(files[i]);
         const fd = new FormData();
         fd.append("file", optimized);
         fd.append("slug", slug);
@@ -185,11 +185,7 @@ export default function ProjectModal({ isOpen, onClose, initialData }: Props) {
 
     if (pendingCoverFile && slug) {
       try {
-        const optimizedCover = await convertToWebP(
-          pendingCoverFile,
-          2560,
-          0.92,
-        );
+        const optimizedCover = await convertToWebP(pendingCoverFile);
         const fd = new FormData();
         fd.append("file", optimizedCover);
         fd.append("slug", slug);

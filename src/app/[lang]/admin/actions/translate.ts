@@ -1,5 +1,11 @@
 "use server";
 
+import { requireAdmin } from "@/lib/supabase/requireAdmin";
+
+// Límites para que nadie use la clave de Gemini con textos enormes
+const MAX_FIELDS = 40;
+const MAX_FIELD_CHARS = 6000;
+
 export interface TranslationInput {
   [key: string]: string | undefined;
 }
@@ -46,6 +52,29 @@ export async function autoTranslateAction(
   error?: string;
 }> {
   try {
+    // Solo administradores: esta acción consume la API de Gemini (con costo)
+    const guard = await requireAdmin();
+    if (!guard.authorized) {
+      return { success: false, error: guard.error };
+    }
+
+    if (targetLang !== "en" && targetLang !== "fr") {
+      return { success: false, error: "Idioma no válido." };
+    }
+
+    if (
+      !fields ||
+      typeof fields !== "object" ||
+      Object.keys(fields).length > MAX_FIELDS ||
+      Object.values(fields).some(
+        (v) =>
+          v !== undefined &&
+          (typeof v !== "string" || v.length > MAX_FIELD_CHARS),
+      )
+    ) {
+      return { success: false, error: "Texto demasiado largo para traducir." };
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return {

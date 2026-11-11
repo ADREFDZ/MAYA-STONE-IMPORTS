@@ -3,6 +3,7 @@ import { getDictionary } from "@/app/dictionaries";
 import { getActiveCollectionsAction, type MaterialItem } from "./actions";
 import CollectionCatalog from "@/components/pages/Collection/CollectionCatalog";
 import { ROUTES } from "@/lib/i18n/routes";
+import { fillTemplate } from "@/lib/utils/strings";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gpomaya.com";
 
@@ -109,7 +110,7 @@ export async function generateMetadata({
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
   const lang = (resolvedParams?.lang === "en" ? "en" : "es") as "es" | "en";
-  const isEs = lang === "es";
+  const { seo } = await getDictionary(lang);
 
   const currentSlug = ROUTES.coleccion[lang];
   const esSlug = ROUTES.coleccion.es;
@@ -133,22 +134,23 @@ export async function generateMetadata({
       if (selectedMat) {
         const matTitle = selectedMat.aka || selectedMat.name;
         const formattedColTitle = formatEditorialName(col.title);
-        const title = isEs
-          ? `${matTitle} · Colección ${formattedColTitle}`
-          : `${matTitle} · ${formattedColTitle} Collection`;
+        const title = fillTemplate(seo.collection.material_title, {
+          material: matTitle,
+          collection: formattedColTitle,
+        });
 
         const categoryText = selectedMat.category
           ? selectedMat.category.toLowerCase()
-          : isEs
-            ? "piedra natural"
-            : "natural stone";
+          : seo.collection.category_fallback;
         const originText = selectedMat.origin ? ` (${selectedMat.origin})` : "";
 
         const description =
           selectedMat.description ||
-          (isEs
-            ? `${matTitle}, ${categoryText}${originText}. Superficie natural curada para arquitectura y diseño de alta permanencia.`
-            : `${matTitle}, curated ${categoryText}${originText}. Natural architectural surface selected for enduring permanence.`);
+          fillTemplate(seo.collection.material_description, {
+            material: matTitle,
+            category: categoryText,
+            origin: originText,
+          });
 
         const fullCanonical = `${SITE_URL}/${currentSlug}?material=${materialQuery}`;
         const matImage =
@@ -190,13 +192,9 @@ export async function generateMetadata({
   }
 
   // 2. METADATOS GENERALES DEL CATÁLOGO COMPLETO
-  const title = isEs
-    ? "Curaduría de la Materia · Piedras Naturales y Maderas Nobles"
-    : "Curation of Matter · Natural Stone & Fine Hardwoods";
+  const title = seo.collection.title;
 
-  const description = isEs
-    ? "Catálogo editorial de mármoles, cuarcitas, travertinos y maderas curadas por su narrativa geológica y permanencia en la arquitectura contemporánea."
-    : "Editorial archive of marble, quartzite, travertine, and fine hardwoods curated for architectural permanence and geological presence.";
+  const description = seo.collection.description;
 
   return {
     title,

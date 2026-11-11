@@ -5,13 +5,20 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FullscreenModal from "@/components/admin/FullscreenModal";
 import ImageUploadField from "@/components/admin/ImageUploadField";
-import { convertToWebP, isVideoUrl } from "@/lib/utils/media";
+import {
+  compressVideoForWeb,
+  convertToWebP,
+  STORAGE_CACHE_SECONDS,
+  type VideoProgress,
+} from "@/lib/utils/media";
 import { autoTranslateAction } from "@/app/[lang]/admin/actions/translate";
 import {
   saveCollectionAction,
   uploadCollectionLogoAction,
-  EditorialBlockData,
 } from "./actions";
+
+/** Límite del catálogo PDF (el plan de Supabase admite hasta 50 MB por archivo). */
+const MAX_CATALOG_MB = 50;
 
 export interface ProductSimple {
   sku: string;
@@ -27,6 +34,42 @@ interface Props {
   availableProducts: ProductSimple[];
 }
 
+/**
+ * Comprime un video para web (H.264 1080p, faststart) mostrando el avance.
+ * Si algo falla (navegador sin WebAssembly, sin red para descargar ffmpeg…),
+ * sube el original para no bloquear al admin.
+ */
+async function prepareVideo(file: File, onStatus: (text: string) => void) {
+  const labels: Record<VideoProgress["stage"], string> = {
+    loading: "Preparando compresor…",
+    analyzing: "Analizando video…",
+    compressing: "Optimizando",
+    done: "Listo",
+  };
+  try {
+    const out = await compressVideoForWeb(file, ({ stage, ratio }) =>
+      onStatus(
+        stage === "compressing" && ratio !== undefined
+          ? `${labels[stage]} ${Math.round(ratio * 100)}%`
+          : labels[stage],
+      ),
+    );
+    if (out.size > 48 * 1024 * 1024) {
+      throw new Error(
+        `El video optimizado pesa ${(out.size / 1048576).toFixed(0)} MB (máx. 48 MB). Usa un clip más corto.`,
+      );
+    }
+    return out;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("máx. 48 MB")) throw err;
+    console.warn("[video] No se pudo optimizar, se sube el original:", err);
+    if (file.size > 48 * 1024 * 1024) {
+      throw new Error("No se pudo optimizar el video y el original supera 48 MB.");
+    }
+    return file;
+  }
+}
+
 export default function CollectionModal({
   isOpen,
   onClose,
@@ -35,7 +78,7 @@ export default function CollectionModal({
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "general" | "editorial" | "media_inventory"
+    "general" | "media_inventory"
   >("general");
 
   const [titleEs, setTitleEs] = useState("");
@@ -56,14 +99,13 @@ export default function CollectionModal({
 
   const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  const [editorialBlocks, setEditorialBlocks] = useState<EditorialBlockData[]>(
-    [],
+  const [catalogUrl, setCatalogUrl] = useState("");
+  const [pendingCatalogFile, setPendingCatalogFile] = useState<File | null>(
+    null,
   );
 
-  const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [uploadProgressText, setUploadProgressText] = useState("");
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoStatus, setVideoStatus] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [selectedSkus, setSelectedSkus] = useState<string[]>([]);
@@ -88,49 +130,7 @@ export default function CollectionModal({
       setCoverImage(initialData.cover_image || "");
       setCoverPreview(initialData.cover_image || null);
 
-      let parsedGallery = initialData.gallery_images;
-      if (typeof parsedGallery === "string") {
-        try {
-          parsedGallery = JSON.parse(parsedGallery);
-        } catch {
-          parsedGallery = [];
-        }
-      }
-      setGalleryImages(Array.isArray(parsedGallery) ? parsedGallery : []);
-
-      let rawBlocks = initialData.editorial_blocks;
-      if (typeof rawBlocks === "string") {
-        try {
-          rawBlocks = JSON.parse(rawBlocks);
-        } catch {
-          rawBlocks = [];
-        }
-      }
-
-      if (Array.isArray(rawBlocks)) {
-        const normalizedBlocks: EditorialBlockData[] = rawBlocks.map(
-          (b: any, idx: number) => ({
-            id: b.id || `block-${Date.now()}-${idx}`,
-            title: b.title || b.title_es || "",
-            title_en: b.title_en || "",
-            subtitle: b.subtitle || b.subtitle_es || "",
-            subtitle_en: b.subtitle_en || "",
-            content: b.content || b.content_es || b.body || "",
-            content_en: b.content_en || "",
-            curatorialNote:
-              b.curatorialNote ||
-              b.curatorial_note ||
-              b.curatorial_note_es ||
-              "",
-            curatorialNote_en: b.curatorialNote_en || "",
-            bullets: Array.isArray(b.bullets) ? b.bullets : [],
-          }),
-        );
-        setEditorialBlocks(normalizedBlocks);
-      } else {
-        setEditorialBlocks([]);
-      }
-
+      setCatalogUrl(initialData.catalog_url || "");
       setIsActive(initialData.is_active ?? true);
       setSelectedSkus(
         Array.isArray(initialData.selected_skus)
@@ -152,15 +152,14 @@ export default function CollectionModal({
       setVideoUrl("");
       setCoverImage("");
       setCoverPreview(null);
-      setGalleryImages([]);
-      setEditorialBlocks([]);
+      setCatalogUrl("");
       setIsActive(true);
       setSelectedSkus([]);
     }
     setActiveTab("general");
     setPendingCoverFile(null);
     setPendingLogoFile(null);
-    setUploadProgressText("");
+    setPendingCatalogFile(null);
   }, [initialData, isOpen]);
 
   const handleTitleChange = (val: string) => {
@@ -202,43 +201,26 @@ export default function CollectionModal({
     }
   };
 
-  const handleAutoTranslateBlock = async (bIdx: number) => {
-    const block = editorialBlocks[bIdx];
-    if (
-      !block.title &&
-      !block.subtitle &&
-      !block.content &&
-      !block.curatorialNote
-    ) {
-      alert("Ingresa contenido en español en este ensayo primero.");
+  const handleSelectCatalog = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+      alert("El catálogo debe ser un archivo PDF.");
       return;
     }
-
-    setIsTranslating(true);
-    const res = await autoTranslateAction({
-      title: block.title,
-      subtitle: block.subtitle,
-      content: block.content,
-      curatorialNote: block.curatorialNote,
-    });
-    setIsTranslating(false);
-
-    if (res.success && res.data) {
-      setEditorialBlocks((prev) => {
-        const updated = [...prev];
-        updated[bIdx] = {
-          ...updated[bIdx],
-          title_en: res.data?.title || updated[bIdx].title_en,
-          subtitle_en: res.data?.subtitle || updated[bIdx].subtitle_en,
-          content_en: res.data?.content || updated[bIdx].content_en,
-          curatorialNote_en:
-            res.data?.curatorialNote || updated[bIdx].curatorialNote_en,
-        };
-        return updated;
-      });
-    } else {
-      alert("Error al traducir el ensayo: " + res.error);
+    if (file.size > MAX_CATALOG_MB * 1024 * 1024) {
+      alert(
+        `El PDF pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. Comprímelo a menos de ${MAX_CATALOG_MB} MB.`,
+      );
+      return;
     }
+    setPendingCatalogFile(file);
+  };
+
+  const handleRemoveCatalog = () => {
+    setCatalogUrl("");
+    setPendingCatalogFile(null);
   };
 
   const handleSelectCover = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -273,10 +255,11 @@ export default function CollectionModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const MAX_SIZE_MB = 35;
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+    // El original puede ser pesado: se comprime aquí antes de subir.
+    const MAX_INPUT_MB = 600;
+    if (file.size > MAX_INPUT_MB * 1024 * 1024) {
       alert(
-        `El video pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. Optimízalo a menos de ${MAX_SIZE_MB} MB.`,
+        `El video pesa ${(file.size / (1024 * 1024)).toFixed(0)} MB. El máximo para procesar en el navegador es ${MAX_INPUT_MB} MB.`,
       );
       return;
     }
@@ -290,15 +273,16 @@ export default function CollectionModal({
     try {
       const supabase = createClient();
       const cleanSlug = slug.trim().replace(/[^a-zA-Z0-9_-]/g, "");
-      const ext = file.name.split(".").pop() || "mp4";
-      const fileName = `hero-loop-${Date.now()}.${ext}`;
+      const webVideo = await prepareVideo(file, setVideoStatus);
+      setVideoStatus("Subiendo…");
+      const fileName = `hero-loop-${Date.now()}.mp4`;
       const filePath = `collections/${cleanSlug}/videos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("materials")
-        .upload(filePath, file, {
-          contentType: file.type || "video/mp4",
-          cacheControl: "3600",
+        .upload(filePath, webVideo, {
+          contentType: "video/mp4",
+          cacheControl: STORAGE_CACHE_SECONDS,
           upsert: true,
         });
 
@@ -317,111 +301,8 @@ export default function CollectionModal({
       alert("Error procesando la subida del video.");
     } finally {
       setUploadingVideo(false);
+      setVideoStatus("");
     }
-  };
-
-  const handleAddGalleryMedia = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !slug) {
-      if (!slug) alert("Ingresa primero el título y slug.");
-      return;
-    }
-
-    setUploadingGallery(true);
-    const uploadedUrls: string[] = [];
-    const supabase = createClient();
-    const cleanSlug = slug.trim().replace(/[^a-zA-Z0-9_-]/g, "");
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setUploadProgressText(`Procesando ${i + 1} de ${files.length}...`);
-
-        if (file.type.startsWith("image/")) {
-          const optimizedFile = await convertToWebP(file, 2560, 0.92);
-          const fileName = `gallery-${Date.now()}-${Math.random().toString(36).substring(2, 6)}.webp`;
-          const filePath = `collections/${cleanSlug}/gallery/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from("materials")
-            .upload(filePath, optimizedFile, {
-              contentType: "image/webp",
-              cacheControl: "3600",
-              upsert: true,
-            });
-
-          if (!uploadError) {
-            const { data: publicData } = supabase.storage
-              .from("materials")
-              .getPublicUrl(filePath);
-            uploadedUrls.push(`${publicData.publicUrl}?t=${Date.now()}`);
-          }
-        } else if (file.type.startsWith("video/")) {
-          const ext = file.name.split(".").pop() || "mp4";
-          const fileName = `gallery-vid-${Date.now()}-${Math.random().toString(36).substring(2, 6)}.${ext}`;
-          const filePath = `collections/${cleanSlug}/videos/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from("materials")
-            .upload(filePath, file, {
-              contentType: file.type || "video/mp4",
-              cacheControl: "3600",
-              upsert: true,
-            });
-
-          if (!uploadError) {
-            const { data: publicData } = supabase.storage
-              .from("materials")
-              .getPublicUrl(filePath);
-            uploadedUrls.push(`${publicData.publicUrl}?t=${Date.now()}`);
-          }
-        }
-      }
-
-      if (uploadedUrls.length > 0) {
-        setGalleryImages((prev) => [...prev, ...uploadedUrls]);
-      }
-    } finally {
-      setUploadingGallery(false);
-      setUploadProgressText("");
-      e.target.value = "";
-    }
-  };
-
-  const handleAddEditorialBlock = () => {
-    setEditorialBlocks((prev) => [
-      ...prev,
-      {
-        id: `block-${Date.now()}`,
-        title: "",
-        title_en: "",
-        subtitle: "",
-        subtitle_en: "",
-        content: "",
-        content_en: "",
-        curatorialNote: "",
-        curatorialNote_en: "",
-        bullets: [],
-      },
-    ]);
-  };
-
-  const handleUpdateEditorialBlock = (
-    index: number,
-    field: keyof EditorialBlockData,
-    value: any,
-  ) => {
-    setEditorialBlocks((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  };
-
-  const handleRemoveEditorialBlock = (index: number) => {
-    setEditorialBlocks((prev) => prev.filter((_, i) => i !== index));
   };
 
   const toggleSku = (sku: string) => {
@@ -446,8 +327,7 @@ export default function CollectionModal({
         try {
           const optimizedCover = await convertToWebP(
             pendingCoverFile,
-            2560,
-            0.85,
+            { maxBytes: 12 * 1024 * 1024 },
           );
           const supabase = createClient();
           const cleanSlug = slug.trim().replace(/[^a-zA-Z0-9_-]/g, "");
@@ -456,7 +336,7 @@ export default function CollectionModal({
           const { error: uploadError } = await supabase.storage
             .from("materials")
             .upload(filePath, optimizedCover, {
-              contentType: "image/webp",
+              contentType: optimizedCover.type,
               cacheControl: "31536000",
               upsert: false,
             });
@@ -496,19 +376,45 @@ export default function CollectionModal({
       }
     }
 
-    const validEditorialBlocks = editorialBlocks
-      .map((b) => ({
-        ...b,
-        title: b.title || "",
-        title_en: b.title_en || "",
-        subtitle: b.subtitle || "",
-        subtitle_en: b.subtitle_en || "",
-        content: b.content || "",
-        content_en: b.content_en || "",
-        curatorialNote: b.curatorialNote || "",
-        curatorialNote_en: b.curatorialNote_en || "",
-      }))
-      .filter((b) => b.title.trim() !== "" || b.content.trim() !== "");
+    // Catálogo PDF: se sube directo a Storage desde el navegador
+    let finalCatalogUrl = catalogUrl;
+    if (pendingCatalogFile) {
+      if (!slug) {
+        setIsSubmitting(false);
+        alert("Ingresa primero el título y slug.");
+        return;
+      }
+      try {
+        const supabase = createClient();
+        const cleanSlug = slug.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+        const filePath = `collections/${cleanSlug}/catalogo-${cleanSlug}-${Date.now()}.pdf`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("materials")
+          .upload(filePath, pendingCatalogFile, {
+            contentType: "application/pdf",
+            cacheControl: "31536000",
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = supabase.storage
+          .from("materials")
+          .getPublicUrl(filePath);
+        finalCatalogUrl = publicData.publicUrl;
+      } catch (err) {
+        console.error("Error subiendo catálogo:", err);
+        const msg = err instanceof Error ? err.message : String(err);
+        setIsSubmitting(false);
+        alert(
+          "No se pudo subir el catálogo PDF: " +
+            msg +
+            "\nNo se guardaron los cambios; inténtalo de nuevo.",
+        );
+        return;
+      }
+    }
 
     const res = await saveCollectionAction({
       id: initialData?.id,
@@ -524,8 +430,9 @@ export default function CollectionModal({
       description_en: descriptionEn,
       cover_image: finalCoverUrl,
       video_url: videoUrl,
-      gallery_images: galleryImages,
-      editorial_blocks: validEditorialBlocks,
+      // La galería/moodboard de la colección ya no se usa en el sitio.
+      gallery_images: [],
+      catalog_url: finalCatalogUrl,
       is_active: isActive,
       selected_skus: selectedSkus,
     });
@@ -564,20 +471,15 @@ export default function CollectionModal({
           : "Nueva Colección"
       }
       isSubmitting={
-        isSubmitting || uploadingGallery || uploadingVideo || isTranslating
+        isSubmitting || uploadingVideo || isTranslating
       }
       activeTab={activeTab}
       onTabChange={setActiveTab}
       tabs={[
         { id: "general", label: "1. Portadilla, Logo & Medios" },
         {
-          id: "editorial",
-          label: "2. Ensayos",
-          badgeCount: editorialBlocks.length,
-        },
-        {
           id: "media_inventory",
-          label: "3. Materiales & Galería",
+          label: "2. Materiales & Galería",
           badgeCount: selectedSkus.length,
         },
       ]}
@@ -788,8 +690,11 @@ export default function CollectionModal({
                   Video Hero en Loop (Opcional)
                 </span>
                 {uploadingVideo && (
-                  <span className="font-mono text-maya-label text-accent-ink animate-pulse">
-                    Subiendo...
+                  <span
+                    role="status"
+                    className="font-mono text-maya-label text-accent-ink animate-pulse"
+                  >
+                    {videoStatus || "Subiendo..."}
                   </span>
                 )}
               </div>
@@ -824,6 +729,64 @@ export default function CollectionModal({
             </div>
           </div>
 
+          <div className="p-4 sm:p-5 bg-surface border border-border-light rounded-2xs space-y-3 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <span className="block font-mono text-maya-label uppercase tracking-data text-black-neutral font-semibold">
+                Catálogo Digital (PDF)
+              </span>
+              <span className="font-mono text-maya-label text-black-neutral/50">
+                Se descarga al final de la colección · Máx. {MAX_CATALOG_MB} MB
+              </span>
+            </div>
+
+            {(catalogUrl || pendingCatalogFile) && (
+              <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 border border-border-light bg-gray-warm rounded-3xs">
+                <div className="min-w-0 flex items-center gap-2.5">
+                  <span className="shrink-0 font-mono text-maya-label px-1.5 py-0.5 bg-black-neutral text-gray-warm rounded-3xs">
+                    PDF
+                  </span>
+                  <span className="truncate font-sans text-maya-small text-black-neutral">
+                    {pendingCatalogFile
+                      ? `${pendingCatalogFile.name} · ${(pendingCatalogFile.size / (1024 * 1024)).toFixed(1)} MB (se sube al guardar)`
+                      : decodeURIComponent(
+                          catalogUrl.split("/").pop()?.split("?")[0] || "",
+                        )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {catalogUrl && !pendingCatalogFile && (
+                    <a
+                      href={catalogUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-maya-label uppercase tracking-data text-accent-ink underline underline-offset-2"
+                    >
+                      Ver
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleRemoveCatalog}
+                    className="font-mono text-maya-label uppercase tracking-data text-red-600 cursor-pointer"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={handleSelectCatalog}
+              className="font-mono text-maya-small text-black-neutral/70 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-maya-label file:font-mono file:uppercase file:bg-black-neutral file:text-gray-warm file:rounded-3xs cursor-pointer"
+            />
+            <p className="font-sans text-maya-label text-black-neutral/50">
+              Para actualizarlo, sube el nuevo PDF y guarda: el anterior se
+              reemplaza automáticamente.
+            </p>
+          </div>
+
           <div className="flex items-center gap-3 pt-4 border-t border-border-light">
             <input
               type="checkbox"
@@ -842,236 +805,7 @@ export default function CollectionModal({
         </div>
       )}
 
-      {/* TAB 2: EDITORIAL */}
-      {activeTab === "editorial" && (
-        <div className="space-y-6 sm:space-y-8 font-sans">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-light pb-4">
-            <div>
-              <h3 className="font-sans text-maya-h4 uppercase tracking-editorial text-black-neutral font-medium">
-                Ensayos Editoriales & Geológicos ({editorialBlocks.length})
-              </h3>
-              <p className="font-mono text-maya-label text-black-neutral/60 mt-0.5">
-                Redacta los textos curatoriales en ambos idiomas para la
-                narrativa visual.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleAddEditorialBlock}
-              className="px-4 py-2 bg-black-neutral text-white font-mono text-maya-label uppercase tracking-data hover:bg-black-pure transition-colors cursor-pointer self-start sm:self-auto rounded-3xs shrink-0"
-            >
-              + Agregar Nuevo Ensayo
-            </button>
-          </div>
-
-          {editorialBlocks.length === 0 ? (
-            <div className="p-8 sm:p-12 text-center border-2 border-dashed border-border-strong rounded-2xs space-y-3 bg-surface">
-              <p className="font-mono text-maya-small text-black-neutral/50 uppercase">
-                No hay bloques o ensayos agregados a esta colección.
-              </p>
-              <button
-                type="button"
-                onClick={handleAddEditorialBlock}
-                className="text-accent-ink font-mono text-maya-small uppercase underline cursor-pointer"
-              >
-                Agregar el primer ensayo (Ej. Génesis y Extracción)
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {editorialBlocks.map((block, bIdx) => (
-                <div
-                  key={block.id || `block-${bIdx}`}
-                  className="p-4 sm:p-6 bg-surface border border-border-light space-y-4 rounded-2xs relative shadow-2xs"
-                >
-                  <div className="flex justify-between items-center border-b border-border-light pb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-maya-small text-accent-ink uppercase font-bold tracking-data">
-                        Ensayo #{bIdx + 1}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={isTranslating}
-                        onClick={() => handleAutoTranslateBlock(bIdx)}
-                        className="px-2.5 py-1 bg-surface border border-accent/30 text-accent-ink font-mono text-maya-label uppercase font-semibold rounded-3xs hover:bg-accent hover:text-white transition-colors cursor-pointer"
-                      >
-                        ✦ Traducir Ensayo
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveEditorialBlock(bIdx)}
-                      className="text-red-600 hover:text-red-800 font-mono text-maya-label uppercase cursor-pointer"
-                    >
-                      Eliminar Ensayo ✕
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/60">
-                        Título (Español) *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={block.title}
-                        onChange={(e) =>
-                          handleUpdateEditorialBlock(
-                            bIdx,
-                            "title",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Ej. Génesis y Extracción"
-                        className="w-full px-3.5 py-2 border border-accent/25 text-maya-body bg-accent-soft text-black-neutral font-medium rounded-3xs focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/60">
-                        Título (Inglés)
-                      </label>
-                      <input
-                        type="text"
-                        value={block.title_en || ""}
-                        onChange={(e) =>
-                          handleUpdateEditorialBlock(
-                            bIdx,
-                            "title_en",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Ej. Genesis & Extraction"
-                        className="w-full px-3.5 py-2 border border-accent/25 text-maya-body bg-accent-soft text-black-neutral font-medium rounded-3xs focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/60">
-                        Subtítulo (Español)
-                      </label>
-                      <input
-                        type="text"
-                        value={block.subtitle || ""}
-                        onChange={(e) =>
-                          handleUpdateEditorialBlock(
-                            bIdx,
-                            "subtitle",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Ej. ORIGEN & PROCESO GEOLÓGICO"
-                        className="w-full px-3.5 py-2 border border-accent/25 font-mono text-maya-small bg-accent-soft text-black-neutral rounded-3xs focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/60">
-                        Subtítulo (Inglés)
-                      </label>
-                      <input
-                        type="text"
-                        value={block.subtitle_en || ""}
-                        onChange={(e) =>
-                          handleUpdateEditorialBlock(
-                            bIdx,
-                            "subtitle_en",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Ej. GEOLOGICAL ORIGIN & PROCESS"
-                        className="w-full px-3.5 py-2 border border-accent/25 font-mono text-maya-small bg-accent-soft text-black-neutral rounded-3xs focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/60">
-                        Cuerpo del Ensayo (Español) *
-                      </label>
-                      <textarea
-                        rows={4}
-                        required
-                        value={block.content}
-                        onChange={(e) =>
-                          handleUpdateEditorialBlock(
-                            bIdx,
-                            "content",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Redacta la explicación en español..."
-                        className="w-full px-3.5 py-2.5 border border-accent/25 text-maya-small bg-accent-soft text-black-neutral resize-y font-sans leading-relaxed rounded-3xs focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/60">
-                        Cuerpo del Ensayo (Inglés)
-                      </label>
-                      <textarea
-                        rows={4}
-                        value={block.content_en || ""}
-                        onChange={(e) =>
-                          handleUpdateEditorialBlock(
-                            bIdx,
-                            "content_en",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Essay body in English..."
-                        className="w-full px-3.5 py-2.5 border border-accent/25 text-maya-small bg-accent-soft text-black-neutral resize-y font-sans leading-relaxed rounded-3xs focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/60">
-                        Nota Curatorial (Español)
-                      </label>
-                      <input
-                        type="text"
-                        value={block.curatorialNote || ""}
-                        onChange={(e) =>
-                          handleUpdateEditorialBlock(
-                            bIdx,
-                            "curatorialNote",
-                            e.target.value,
-                          )
-                        }
-                        placeholder='Ej. "Cada estrato visible representa una estación mineral."'
-                        className="w-full px-3.5 py-2 border border-accent/25 text-maya-small bg-accent-soft text-black-neutral font-serif italic rounded-3xs focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/60">
-                        Nota Curatorial (Inglés)
-                      </label>
-                      <input
-                        type="text"
-                        value={block.curatorialNote_en || ""}
-                        onChange={(e) =>
-                          handleUpdateEditorialBlock(
-                            bIdx,
-                            "curatorialNote_en",
-                            e.target.value,
-                          )
-                        }
-                        placeholder='Ej. "Each visible layer represents a mineral season."'
-                        className="w-full px-3.5 py-2 border border-accent/25 text-maya-small bg-accent-soft text-black-neutral font-serif italic rounded-3xs focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 3: MATERIALES & GALERÍA */}
+      {/* TAB 2: MATERIALES & GALERÍA */}
       {activeTab === "media_inventory" && (
         <div className="space-y-8 sm:space-y-10 font-sans">
           <div className="space-y-4">
@@ -1155,70 +889,6 @@ export default function CollectionModal({
                 );
               })}
             </div>
-          </div>
-
-          <div className="space-y-4 pt-6 border-t border-border-light">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h3 className="font-sans text-maya-h4 uppercase tracking-editorial text-black-neutral font-medium">
-                Galería Editorial / Moodboard ({galleryImages.length})
-              </h3>
-              {uploadingGallery && (
-                <span className="font-mono text-maya-label text-accent-ink animate-pulse">
-                  {uploadProgressText || "Subiendo lote..."}
-                </span>
-              )}
-            </div>
-
-            <input
-              type="file"
-              multiple
-              accept="image/*,video/mp4,video/webm"
-              onChange={handleAddGalleryMedia}
-              disabled={uploadingGallery}
-              className="font-mono text-maya-small text-black-neutral/70 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-maya-label file:font-mono file:uppercase file:bg-black-neutral file:text-gray-warm file:rounded-3xs cursor-pointer"
-            />
-
-            {galleryImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-                {galleryImages.map((mediaUrl, idx) => {
-                  const isVid = isVideoUrl(mediaUrl);
-                  return (
-                    <div
-                      key={idx}
-                      className="relative aspect-square border border-border-light group overflow-hidden bg-black-pure rounded-2xs shadow-2xs"
-                    >
-                      {isVid ? (
-                        <video
-                          src={mediaUrl}
-                          muted
-                          loop
-                          playsInline
-                          autoPlay
-                          className="w-full h-full object-cover opacity-80"
-                        />
-                      ) : (
-                        <img
-                          src={mediaUrl}
-                          alt={`Galería ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setGalleryImages((prev) =>
-                            prev.filter((_, i) => i !== idx),
-                          )
-                        }
-                        className="absolute top-1.5 right-1.5 bg-red-600 text-white text-[9px] font-mono w-4 h-4 rounded-full flex items-center justify-center cursor-pointer shadow-xs"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
       )}

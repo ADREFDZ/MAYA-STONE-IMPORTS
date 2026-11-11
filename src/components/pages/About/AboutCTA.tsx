@@ -8,6 +8,7 @@ interface AboutCTAProps {
     label: string;
     title: string;
     button: string;
+    button_secondary: string;
   };
 }
 
@@ -25,7 +26,7 @@ export default function AboutCTA({ lang, dict }: AboutCTAProps) {
           {dict.title}
         </h2>
 
-        <div className="pt-2 sm:pt-4">
+        <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
           <Button
             href={`/${ROUTES.coleccion[currentLocale]}`}
             variant="dark"
@@ -34,6 +35,13 @@ export default function AboutCTA({ lang, dict }: AboutCTAProps) {
             iconPosition="right"
           >
             {dict.button}
+          </Button>
+          <Button
+            href={`/${ROUTES.contacto[currentLocale]}?reason=quote`}
+            variant="outline-dark"
+            size="md"
+          >
+            {dict.button_secondary}
           </Button>
         </div>
       </div>

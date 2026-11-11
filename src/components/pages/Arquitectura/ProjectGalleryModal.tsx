@@ -5,18 +5,18 @@ import Image from "next/image";
 import { useEffect } from "react";
 import { ProjectItem } from "./ProjectEditorialSpread";
 import { getI18n } from "@/lib/i18n/utils";
+import { lockScroll } from "@/lib/utils/scrollLock";
 
 interface ProjectGalleryModalProps {
   project: ProjectItem | null;
   lang: "es" | "en";
   onClose: () => void;
   dict: {
-    close?: any;
-    statement_title?: any;
-    materials_title?: any;
-    gallery_title?: any;
-    no_photo?: any;
-    default_location?: any;
+    close: string;
+    statement_title: string;
+    materials_title: string;
+    gallery_title: string;
+    no_photo: string;
   };
   categoriesDict: Record<string, string>;
 }
@@ -33,12 +33,11 @@ export default function ProjectGalleryModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    if (project) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
-    }
+    if (!project) return;
+    const unlock = lockScroll();
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = "unset";
+      unlock();
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [project, onClose]);
@@ -55,14 +54,11 @@ export default function ProjectGalleryModal({
   const location = getI18n(project.location, lang);
   const coverImageSrc = cleanImageUrl(project.cover_image);
 
-  const closeText = getI18n(dict?.close, lang) || "Cerrar";
-  const noPhotoText = getI18n(dict?.no_photo, lang) || "Sin Foto";
-  const statementTitle =
-    getI18n(dict?.statement_title, lang) || "Memoria Descriptiva";
-  const materialsTitle =
-    getI18n(dict?.materials_title, lang) || "Materia Natural en Obra";
-  const galleryTitle =
-    getI18n(dict?.gallery_title, lang) || "Galería Fotográfica";
+  const closeText = dict.close;
+  const noPhotoText = dict.no_photo;
+  const statementTitle = dict.statement_title;
+  const materialsTitle = dict.materials_title;
+  const galleryTitle = dict.gallery_title;
 
   return (
     <div

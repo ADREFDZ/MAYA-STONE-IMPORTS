@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, ReactNode } from "react";
+import { lockScroll } from "@/lib/utils/scrollLock";
 
 interface ModalProps {
   isOpen: boolean;
@@ -21,12 +22,11 @@ export function Modal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
-    }
+    if (!isOpen) return;
+    const unlock = lockScroll();
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = "unset";
+      unlock();
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);

@@ -6,12 +6,14 @@ import type { NextConfig } from "next";
 // "Content-Security-Policy" para activarla.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://connect.facebook.net https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms",
+  // Compresor de video del admin (ffmpeg.wasm) corre en un worker
+  "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co https://*.cdninstagram.com https://*.fbcdn.net https://www.facebook.com",
+  "img-src 'self' data: blob: https://*.supabase.co https://*.cdninstagram.com https://*.fbcdn.net https://www.facebook.com https://*.google-analytics.com https://*.googletagmanager.com https://*.clarity.ms https://c.bing.com",
   "media-src 'self' blob: https://*.supabase.co https://*.cdninstagram.com https://*.fbcdn.net",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://connect.facebook.net https://www.facebook.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://connect.facebook.net https://www.facebook.com https://cdn.jsdelivr.net https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.clarity.ms",
   "frame-src https://www.google.com https://maps.google.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -46,7 +48,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+            value:
+              "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
           },
           {
             key: "Content-Security-Policy-Report-Only",
@@ -58,9 +61,21 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    // Habilita las calidades personalizadas para eliminar la advertencia de Next.js
-    qualities: [75, 85, 90],
+    // 1. Formatos prioritarios de compresión sin pérdida visual
     formats: ["image/avif", "image/webp"],
+
+    // 2. Calidades disponibles (incluye 95 para piezas arquitectónicas clave)
+    // Sin 75: cualquier <Image> sin `quality` usa la más cercana (85).
+    // Así todo el sitio sale en alta calidad por defecto; 90/95 para piezas clave.
+    qualities: [85, 90, 95],
+
+    // 3. Puntos de corte para evitar que imágenes a 50vw o 100vw se pixelen en pantallas 2K/4K
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2560, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+
+    // 4. Cachea la optimización en el servidor/CDN durante 1 año
+    minimumCacheTTL: 31536000,
+
     remotePatterns: [
       {
         protocol: "https",
@@ -76,6 +91,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.fbcdn.net" },
     ],
   },
+
   experimental: {
     serverActions: {
       bodySizeLimit: "50mb",

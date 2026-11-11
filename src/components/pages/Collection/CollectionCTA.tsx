@@ -30,7 +30,7 @@ export default function CollectionCTA({
 
         <div className="mt-6 sm:mt-8">
           <Button
-            href={`/${ROUTES.contacto[currentLocale]}?reason=consulting`}
+            href={`/${ROUTES.contacto[currentLocale]}?reason=quote`}
             variant="dark"
             size="md"
             icon={<span>→</span>}

@@ -10,6 +10,7 @@ import ProjectEditorialSpread, {
 import ProjectGalleryModal from "@/components/pages/Arquitectura/ProjectGalleryModal";
 import { ROUTES } from "@/lib/i18n/routes";
 
+
 interface ArchitectureClientProps {
   projects: ProjectItem[];
   lang: "es" | "en";
@@ -30,7 +31,6 @@ interface ArchitectureClientProps {
       materials_title: string;
       gallery_title: string;
       no_photo: string;
-      default_location: string;
     };
   };
 }
@@ -55,11 +55,9 @@ function ArchitectureContent({
     "Usos Mixtos",
   ];
 
-  // 1. Apertura manual del modal guardando el scroll actual[cite: 50]
   const handleOpenDossier = (project: ProjectItem) => {
     scrollPositionRef.current = window.scrollY;
     setSelectedProject(project);
-
     if (project.slug) {
       const parentSlug = ROUTES.arquitectura[lang];
       window.history.pushState(
@@ -70,16 +68,12 @@ function ArchitectureContent({
     }
   };
 
-  // 2. Cierre manual del modal conservando la posición exacta del proyecto[cite: 50]
   const handleCloseModal = () => {
     const targetSlug = selectedProject?.slug || selectedProject?.id;
     const savedY = scrollPositionRef.current;
-
     setSelectedProject(null);
     const parentSlug = ROUTES.arquitectura[lang];
     window.history.replaceState({}, "", `/${parentSlug}`);
-
-    // Restaurar posición y enfocar la tarjeta correspondiente
     requestAnimationFrame(() => {
       if (targetSlug) {
         const el = document.getElementById(targetSlug);
@@ -92,13 +86,11 @@ function ArchitectureContent({
     });
   };
 
-  // 3. Sincronización con el botón Atrás / Adelante del navegador (popstate)[cite: 50]
   useEffect(() => {
     const handlePopState = () => {
       const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, "");
       const segments = cleanPath.split("/").filter(Boolean);
       const parentSlug = ROUTES.arquitectura[lang];
-
       if (segments.length <= 1 || segments[0] !== parentSlug) {
         setSelectedProject((prev) => {
           if (prev) {
@@ -130,25 +122,20 @@ function ArchitectureContent({
         }
       }
     };
-
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
   }, [projects, lang]);
 
-  // 4. Soporte para parámetro URL legacy (?project=...)[cite: 50]
   useEffect(() => {
     const projectQuery = searchParams.get("project");
     if (!projectQuery || projects.length === 0) return;
-
     const matchedProject = projects.find(
       (p) => p.slug === projectQuery || p.id === projectQuery,
     );
-
     if (matchedProject) {
       handleOpenDossier(matchedProject);
-
       setTimeout(() => {
         const targetId = matchedProject.slug || matchedProject.id;
         const el = document.getElementById(targetId);
@@ -165,8 +152,10 @@ function ArchitectureContent({
 
   return (
     <div className="min-h-screen bg-background text-black-neutral font-sans selection:bg-accent selection:text-white">
+      {/* 1. HERO CON RECORRIDO AMPLIO Y COGNITIVO */}
       <ArchitectureHero dict={dict.hero} />
 
+      {/* 2. DOCK DE FILTROS VINCULADO AL ÁREA DE OBRAS */}
       <ArchitectureFilter
         categories={dict.categories}
         activeCategory={activeCategory}
@@ -175,7 +164,11 @@ function ArchitectureContent({
         dockLabel={dict.filter_dock_label}
       />
 
-      <main id="archive-grid" className="py-12 md:py-16">
+      {/* 3. SECCIÓN DE PROYECTOS SIN ESPACIO BLANCO RESIDUAL */}
+      <main
+        id="archive-grid"
+        className="relative z-10 lg:-mt-32 pt-16 pb-16 md:pb-24 bg-background transform-gpu will-change-transform"
+      >
         {filteredProjects.length === 0 ? (
           <div className="py-32 text-center font-mono text-xs text-black-neutral/40 uppercase tracking-widest">
             {dict.empty_state}

@@ -8,11 +8,6 @@ interface InstagramFeedProps {
   dict: InstagramDictionary;
 }
 
-/**
- * Sección de Instagram del home. Lee las publicaciones directamente de la
- * API oficial de Meta (ver src/lib/instagram/feed.ts), cacheadas 1 hora.
- * Muestra los 12 más recientes; "Ver más" lleva al perfil de Instagram.
- */
 export default async function InstagramFeed({ dict }: InstagramFeedProps) {
   const [{ posts }, profile] = await Promise.all([
     getInstagramPage(),
@@ -23,9 +18,10 @@ export default async function InstagramFeed({ dict }: InstagramFeedProps) {
 
   return (
     <section className="relative w-full bg-gray-cool text-black-neutral overflow-hidden maya-section border-t border-border-light">
-      <div className="editorial-container space-y-6 sm:space-y-10 md:space-y-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 border-b border-black-neutral/15 pb-4">
-          <div className="space-y-1.5 max-w-2xl">
+      <div className="editorial-container space-y-6 sm:space-y-8 md:space-y-10">
+        {/* CABECERA EDITORIAL */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 border-b border-black-neutral/15 pb-3.5 sm:pb-4">
+          <div className="space-y-1 max-w-2xl">
             <SectionLabel variant="minimal" theme="accent">
               {dict.section_label}
             </SectionLabel>
@@ -45,11 +41,8 @@ export default async function InstagramFeed({ dict }: InstagramFeedProps) {
           </a>
         </div>
 
-        <InstagramGridClient
-          posts={posts}
-          profile={profile}
-          dict={dict}
-        />
+        {/* FEED CLIENT CON PROPORCIONES REDUCIDAS UN 20% */}
+        <InstagramGridClient posts={posts} profile={profile} dict={dict} />
       </div>
     </section>
   );

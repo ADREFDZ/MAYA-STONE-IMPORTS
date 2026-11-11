@@ -1,13 +1,12 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { slugify } from "@/lib/utils/strings";
-import { useState } from "react";
 import CollectionHero from "./CollectionHero";
 import CollectionTabsNav from "./CollectionTabsNav";
 import CollectionSection from "./CollectionSection";
 import CollectionCTA from "./CollectionCTA";
 import { CollectionItem } from "@/app/[lang]/coleccion/actions";
-
 
 interface CollectionCatalogProps {
   collections: CollectionItem[];
@@ -15,22 +14,42 @@ interface CollectionCatalogProps {
   dict?: any;
 }
 
+// Orden curatorial estricto
+const TARGET_ORDER = ["reserve", "essentials", "travertino", "dune"];
+
+function getCollectionOrderIndex(slug: string): number {
+  const clean = slug.toLowerCase();
+  const index = TARGET_ORDER.findIndex((key) => clean.includes(key));
+  return index !== -1 ? index : 999;
+}
+
 export default function CollectionCatalog({
   collections = [],
   lang,
   dict,
 }: CollectionCatalogProps) {
+  // Ordena las colecciones: Reserve, Essentials, Travertino y Dune
+  const sortedCollections = useMemo(() => {
+    return [...collections].sort((a, b) => {
+      const slugA = slugify(a.slug || a.title || a.id);
+      const slugB = slugify(b.slug || b.title || b.id);
+      return getCollectionOrderIndex(slugA) - getCollectionOrderIndex(slugB);
+    });
+  }, [collections]);
+
   const [activeTab, setActiveTab] = useState<string>(
-    collections[0]?.slug || collections[0]?.id || "",
+    sortedCollections[0]?.slug || sortedCollections[0]?.id || "",
   );
 
   return (
     <main className="min-h-screen bg-background text-black-neutral selection:bg-accent selection:text-white overflow-x-clip">
-      <CollectionHero dict={dict} />
+      {/* 1. HERO KINÉTICO EDITORIAL */}
+      <CollectionHero dict={dict} lang={lang as "es" | "en"} />
 
-      {collections.length > 0 && (
+      {/* 2. DOCK DE NAVEGACIÓN EN EL ORDEN ESPECIFICADO */}
+      {sortedCollections.length > 0 && (
         <CollectionTabsNav
-          collections={collections}
+          collections={sortedCollections}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           lang={lang}
@@ -38,9 +57,9 @@ export default function CollectionCatalog({
         />
       )}
 
-      {/* RENDERIZADO POR SECCIONES TEMÁTICAS */}
+      {/* 3. SECCIONES TEMÁTICAS POR COLECCIÓN */}
       <div className="w-full space-y-0">
-        {collections.map((collection, index) => {
+        {sortedCollections.map((collection, index) => {
           const rawSlug = collection.slug || collection.title || collection.id;
           const sectionId = slugify(rawSlug);
           const themeClass = `theme-collection-${sectionId}`;
@@ -49,20 +68,15 @@ export default function CollectionCatalog({
             <section
               key={collection.id}
               id={sectionId}
-              className={`w-full maya-section scroll-mt-20 transition-colors duration-700 ${themeClass}`}
-              style={{
-                backgroundColor: "var(--col-bg, var(--color-surface))",
-                color: "var(--col-text, #252525)",
-              }}
+              className={`collection-surface w-full maya-section scroll-mt-20 transition-colors duration-700 ${themeClass}`}
             >
-              <div className="editorial-container">
-                <CollectionSection
-                  collection={collection}
-                  index={index}
-                  lang={lang}
-                  dict={dict}
-                />
-              </div>
+              {/* CollectionSection maneja sus propios anchos */}
+              <CollectionSection
+                collection={collection}
+                index={index}
+                lang={lang}
+                dict={dict}
+              />
             </section>
           );
         })}

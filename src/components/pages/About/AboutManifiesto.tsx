@@ -1,4 +1,5 @@
 import SectionLabel from "@/components/ui/SectionLabel";
+import LazyVideo from "@/components/ui/LazyVideo";
 
 interface AboutManifiestoProps {
   dict: {
@@ -21,16 +22,16 @@ export default function AboutManifiesto({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
             <div className="lg:col-span-6 w-full flex justify-center lg:justify-start">
               <div className="relative w-full aspect-16/10 overflow-hidden rounded-2xs bg-black-pure shadow-2xl border border-gray-warm/15">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
+                <LazyVideo
                   key={videoUrl}
+                  src={videoUrl}
+                  poster={
+                    videoUrl.startsWith("/videos/MAYA_Hero2")
+                      ? "/videos/MAYA_Hero2-poster.webp"
+                      : undefined
+                  }
                   className="w-full h-full object-cover block border-0 outline-none"
-                >
-                  <source src={videoUrl} type="video/mp4" />
-                </video>
+                />
               </div>
             </div>
 

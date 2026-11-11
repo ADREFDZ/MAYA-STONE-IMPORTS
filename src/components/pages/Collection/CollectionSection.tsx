@@ -2,18 +2,20 @@
 
 import { slugify } from "@/lib/utils/strings";
 import CollectionLogoTitle from "./CollectionLogoTitle";
-import { isVideoUrl } from "@/lib/utils/media";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import CollectionMaterialCard from "./CollectionMaterialCard";
 import MaterialSpecDiagram from "./MaterialSpecDiagram";
-import {
-  CollectionItem,
-  MaterialItem,
-  EditorialBlock,
-} from "@/app/[lang]/coleccion/actions";
+import MaterialSpecPanel, {
+  PANEL_IMAGE_QUALITY,
+  PANEL_IMAGE_SIZES,
+} from "./MaterialSpecPanel";
+import { preloadImage } from "@/lib/utils/preloadImage";
+import CollectionCatalogDownload from "./CollectionCatalogDownload";
+import { CollectionItem, MaterialItem } from "@/app/[lang]/coleccion/actions";
 import { ROUTES, type Locale } from "@/lib/i18n/routes";
+import LazyVideo from "@/components/ui/LazyVideo";
 
 interface CollectionSectionProps {
   collection: CollectionItem;
@@ -22,16 +24,12 @@ interface CollectionSectionProps {
   dict?: any;
 }
 
-
-
 export default function CollectionSection({
   collection,
   index,
   lang = "es",
   dict,
 }: CollectionSectionProps) {
-  // IMPORTANTE: todos los hooks van antes de cualquier `return` condicional
-  // (reglas de hooks de React). Los early-returns están más abajo.
   const t = dict?.collection_page;
   const materials = useMemo(
     () => collection?.materials || [],
@@ -40,9 +38,13 @@ export default function CollectionSection({
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialItem | null>(
     materials[0] || null,
   );
-  const [activeMediaIdx, setActiveMediaIdx] = useState<number>(0);
 
   const specRef = useRef<HTMLDivElement>(null);
+  const desktopRef = useRef<HTMLDivElement>(null);
+  // Destino del scroll: la ficha en celular o el muestrario en escritorio
+  // (el bloque que no se ve tiene offsetParent = null).
+  const scrollTarget = () =>
+    specRef.current?.offsetParent ? specRef.current : desktopRef.current;
   const searchParams = useSearchParams();
 
   const currentLocale: Locale = lang === "en" ? "en" : "es";
@@ -72,12 +74,12 @@ export default function CollectionSection({
 
       if (found) {
         setSelectedMaterial(found);
-        setActiveMediaIdx(0);
 
         setTimeout(() => {
-          if (specRef.current) {
+          const target = scrollTarget();
+          if (target) {
             const headerOffset = 90;
-            const elementPosition = specRef.current.getBoundingClientRect().top;
+            const elementPosition = target.getBoundingClientRect().top;
             const offsetPosition =
               elementPosition + window.scrollY - headerOffset;
 
@@ -91,82 +93,30 @@ export default function CollectionSection({
     }
   }, [searchParams, materials]);
 
+  // Proporción real del video (evita recortes/estirados al mostrarlo)
+  const [videoRatio, setVideoRatio] = useState<number | null>(null);
+
   const romanIndex =
     ["I", "II", "III", "IV", "V", "VI", "VII"][index] || `0${index + 1}`;
 
-  const uniqueGalleryImages = useMemo(() => {
-    const coverClean = collection?.cover_image?.split("?")[0];
-    return (collection?.gallery_images || []).filter((img) => {
-      const imgClean = img?.split("?")[0];
-      return imgClean !== coverClean;
-    });
-  }, [collection?.cover_image, collection?.gallery_images]);
-
-  const editorialBlocks = useMemo(
-    () => collection?.editorial_blocks || [],
-    [collection?.editorial_blocks],
-  );
-
-  const { assignedEditorialBlocks, remainingMoodboardImages } = useMemo(() => {
-    if (editorialBlocks.length === 0) {
-      return {
-        assignedEditorialBlocks: [],
-        remainingMoodboardImages: uniqueGalleryImages,
-      };
+  // Precarga las fotos del material anterior y siguiente: con las flechas de
+  // la ficha el cambio es instantáneo.
+  useEffect(() => {
+    if (!selectedMaterial || materials.length < 2) return;
+    const i = materials.findIndex((m) => m.sku === selectedMaterial.sku);
+    const desktop = window.matchMedia("(min-width: 768px)").matches;
+    for (const k of [i - 1, i + 1]) {
+      const m = materials[(k + materials.length) % materials.length];
+      const src = m?.image || collection?.cover_image;
+      if (desktop) preloadImage(src, PANEL_IMAGE_SIZES, PANEL_IMAGE_QUALITY);
+      else preloadImage(src, "100vw");
     }
+  }, [selectedMaterial, materials, collection?.cover_image]);
 
-    const assigned = editorialBlocks.map((block: EditorialBlock, idx) => {
-      const assignedImg = block.imageUrl || uniqueGalleryImages[idx] || null;
-      return {
-        ...block,
-        computedImage: assignedImg,
-      };
-    });
-
-    const usedCount = editorialBlocks.length;
-    const remaining = uniqueGalleryImages.slice(usedCount);
-
-    return {
-      assignedEditorialBlocks: assigned,
-      remainingMoodboardImages:
-        remaining.length > 0 ? remaining : uniqueGalleryImages,
-    };
-  }, [editorialBlocks, uniqueGalleryImages]);
-
-  // Early-returns seguros: ya se ejecutaron todos los hooks.
   if (!collection || materials.length === 0) return null;
 
-  const mainImageUrl =
-    selectedMaterial?.image || collection?.cover_image || null;
-
-  const mediaGallery = selectedMaterial
-    ? [
-        ...(mainImageUrl
-          ? [
-              {
-                id: "main",
-                url: mainImageUrl,
-                label: selectedMaterial.image
-                  ? t?.view_natural_slab || "Placa Natural"
-                  : t?.view_sample || "Muestra",
-                isRender: false,
-              },
-            ]
-          : []),
-        ...(selectedMaterial.renders || []).map((r) => ({
-          id: r.id,
-          url: r.render_url,
-          label: r.application || t?.view_render_default || "Perspectiva",
-          isRender: true,
-        })),
-      ]
-    : [];
-
-  const currentMedia = mediaGallery[activeMediaIdx] || mediaGallery[0];
-
-  const handleSelectMaterial = (mat: MaterialItem) => {
+  const handleSelectMaterial = (mat: MaterialItem, scroll = false) => {
     setSelectedMaterial(mat);
-    setActiveMediaIdx(0);
 
     if (typeof window !== "undefined") {
       const aestheticName = mat.aka || mat.name || mat.sku;
@@ -175,10 +125,12 @@ export default function CollectionSection({
       window.history.replaceState({}, "", cleanUrl);
     }
 
+    if (!scroll) return;
     setTimeout(() => {
-      if (specRef.current) {
+      const target = scrollTarget();
+      if (target) {
         const headerOffset = 90;
-        const elementPosition = specRef.current.getBoundingClientRect().top;
+        const elementPosition = target.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.scrollY - headerOffset;
 
         window.scrollTo({
@@ -189,68 +141,81 @@ export default function CollectionSection({
     }, 40);
   };
 
+  const selectedIndex = Math.max(
+    0,
+    materials.findIndex((m) => m.sku === selectedMaterial?.sku),
+  );
+
+  // Muestras de tamaño fijo, centradas en su columna (pocos materiales =
+  // muestras más grandes). Tamaños ~10% menores que la versión anterior.
+  const gridCols =
+    materials.length <= 4
+      ? "grid-cols-[repeat(auto-fit,200px)] lg:grid-cols-[repeat(auto-fit,240px)]"
+      : "grid-cols-[repeat(auto-fit,140px)] lg:grid-cols-[repeat(auto-fit,152px)] xl:grid-cols-[repeat(auto-fit,168px)]";
+
+  // Precarga la foto de la ficha de un material (escritorio/tablet o celular)
+  const preloadSpec = (m?: MaterialItem) => {
+    if (!m || typeof window === "undefined") return;
+    const src = m.image || collection?.cover_image;
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      preloadImage(src, PANEL_IMAGE_SIZES, PANEL_IMAGE_QUALITY);
+    } else {
+      preloadImage(src, "100vw");
+    }
+  };
+
+  const availabilityHref = selectedMaterial
+    ? `/${ROUTES.contacto[currentLocale]}?reason=quote&category=${encodeURIComponent(collection.slug || collectionSlug)}&material=${encodeURIComponent(selectedMaterial.aka || selectedMaterial.name)}`
+    : "";
+
+  const goToMaterial = (step: number) => {
+    const nextIdx =
+      (selectedIndex + step + materials.length) % materials.length;
+    const next = materials[nextIdx];
+    if (next) handleSelectMaterial(next, false);
+  };
+
   return (
-    <article className="space-y-12 sm:space-y-16 lg:space-y-24 font-sans">
+    <article className="space-y-8 sm:space-y-12 lg:space-y-20 font-sans">
+      {/* Portadilla y video: ancho editorial (centrado) */}
+      <div className="editorial-container space-y-8 sm:space-y-12 lg:space-y-20">
       {/* SECCIÓN 1: PORTADILLA EDITORIAL */}
-      <div
-        className="pb-12 sm:pb-16 border-b transition-colors duration-500"
-        style={{ borderColor: "var(--col-border, rgba(255,255,255,0.15))" }}
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
-          <div className="lg:col-span-6 space-y-4 sm:space-y-5">
+      <div className="border-col-border pb-8 sm:pb-12 lg:pb-16 border-b transition-colors duration-500">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-10 lg:gap-14 items-center">
+          <div className="md:col-span-7 lg:col-span-6 space-y-4 sm:space-y-5 min-w-0">
             <div className="space-y-1.5">
-              <span
-                className="font-mono text-maya-label uppercase tracking-data font-bold block"
-                style={{ color: "var(--col-accent, #E5DFC8)" }}
-              >
-                {`${t?.chapter_prefix || "Colección"} ${romanIndex}`}
+              <span className="text-col-accent font-mono text-maya-label uppercase tracking-data font-bold block">
+                {`${t?.chapter_prefix} ${romanIndex}`}
               </span>
               <CollectionLogoTitle
                 title={title || ""}
                 logoUrl={collection.logo_url}
-                className="font-sans font-light text-maya-h1 sm:text-maya-display uppercase tracking-editorial leading-tight"
-                imgClassName="h-12 sm:h-16 lg:h-20 [filter:var(--col-logo-filter,none)]"
-                style={{ color: "var(--col-text, #FFFFFF)" }}
+                className="text-col-text font-sans font-light text-maya-h1 lg:text-maya-display uppercase tracking-editorial leading-tight break-words"
+                imgClassName="h-9 sm:h-12 md:h-14 lg:h-16 xl:h-20 max-w-[85%] col-logo"
               />
               {tagline && (
-                <p
-                  className="font-serif italic text-maya-h4 sm:text-maya-h3 pt-0.5"
-                  style={{
-                    color: "var(--col-secondary, rgba(255,255,255,0.8))",
-                  }}
-                >
+                <p className="text-col-secondary font-serif italic text-maya-body sm:text-maya-h4 pt-0.5">
                   &ldquo;{tagline}&rdquo;
                 </p>
               )}
             </div>
 
             {manifest && (
-              <p
-                className="font-sans text-maya-body font-light leading-relaxed whitespace-pre-line max-w-xl"
-                style={{
-                  color: "var(--col-text-muted, rgba(255,255,255,0.85))",
-                }}
-              >
+              <p className="text-col-muted font-sans text-maya-body font-light leading-relaxed whitespace-pre-line max-w-xl">
                 {manifest}
               </p>
             )}
           </div>
 
           {collection?.cover_image && (
-            <div className="lg:col-span-6 flex justify-center lg:justify-end">
-              <div
-                className="relative w-full max-w-[420px] aspect-4/3 sm:aspect-4/5 overflow-hidden rounded-2xs shadow-2xl border"
-                style={{
-                  borderColor: "rgba(255,255,255,0.15)",
-                  backgroundColor: "rgba(0,0,0,0.2)",
-                }}
-              >
+            <div className="md:col-span-5 lg:col-span-6 flex justify-center md:justify-end">
+              <div className="relative w-full max-w-[280px] sm:max-w-[340px] md:max-w-[400px] xl:max-w-[440px] aspect-[77/100] overflow-hidden">
                 <Image
                   src={collection.cover_image}
                   alt={title}
                   fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover block"
+                  sizes="(max-width: 768px) 300px, 440px"
+                  className="object-cover scale-[1.015]"
                 />
               </div>
             </div>
@@ -260,298 +225,152 @@ export default function CollectionSection({
 
       {/* SECCIÓN 2: VIDEO CINEMÁTICO */}
       {collection?.video_url && (
-        <div
-          className="pb-12 sm:pb-16 flex justify-center border-b transition-colors duration-500"
-          style={{ borderColor: "var(--col-border, rgba(255,255,255,0.15))" }}
-        >
-          <div className="relative w-full max-w-5xl aspect-video overflow-hidden rounded-2xs shadow-2xl bg-black border border-white/10">
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
+        <div className="border-col-border pb-10 sm:pb-16 flex justify-center border-b transition-colors duration-500">
+          {/* 30% más compacto que antes (max-w-5xl → ~717px) y con la proporción
+              real del video: no se estira, no se recorta y no se amplía de más. */}
+          <div
+            className="relative max-w-[717px] overflow-hidden rounded-2xs shadow-2xl bg-black-pure border border-col-media"
+            style={{
+              aspectRatio: videoRatio ?? 16 / 9,
+              // Videos verticales: se limitan por alto para no salirse de pantalla
+              width: `min(100%, calc(75vh * ${videoRatio ?? 16 / 9}))`,
+            }}
+          >
+            <LazyVideo
               key={collection.video_url}
-              className="w-full h-full object-cover block border-0 outline-none"
-            >
-              <source src={collection.video_url} type="video/mp4" />
-            </video>
+              src={collection.video_url}
+              onDimensions={(w, h) => setVideoRatio(w / h)}
+              className="absolute inset-0 w-full h-full object-contain block border-0 outline-none"
+            />
           </div>
         </div>
       )}
 
-      {/* SECCIÓN 3: ENSAYOS DINÁMICOS */}
-      {assignedEditorialBlocks.length > 0 && (
-        <div
-          className="space-y-12 sm:space-y-16 lg:space-y-20 pb-12 sm:pb-16 border-b transition-colors duration-500"
-          style={{ borderColor: "var(--col-border, rgba(255,255,255,0.15))" }}
-        >
-          {assignedEditorialBlocks.map((block: any, idx: number) => {
-            const isEven = idx % 2 === 0;
+      </div>
 
-            return (
-              <div
-                key={block.id || idx}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-14 items-center"
-              >
-                <div
-                  className={`space-y-3.5 ${
-                    block.computedImage
-                      ? "lg:col-span-6"
-                      : "lg:col-span-12 max-w-3xl"
-                  } ${isEven ? "lg:order-1" : "lg:order-2"}`}
-                >
-                  <div className="space-y-1">
-                    {block.subtitle && (
-                      <span
-                        className="font-mono text-maya-label uppercase tracking-data font-semibold block"
-                        style={{ color: "var(--col-accent, #E5DFC8)" }}
-                      >
-                        {block.subtitle}
-                      </span>
-                    )}
-                    <h3
-                      className="font-sans font-light text-maya-h3 sm:text-maya-h2 uppercase tracking-editorial"
-                      style={{ color: "var(--col-text, #FFFFFF)" }}
-                    >
-                      {block.title}
-                    </h3>
-                  </div>
+      {/* Muestrario y ficha: mismos márgenes laterales que el header */}
+      <div className="w-full px-4 sm:px-7 md:px-10 lg:px-14">
+      {/* =========================================================
+          SECCIÓN 3 Y 4: MUESTRARIO + FICHA TÉCNICA
+          ========================================================= */}
 
-                  <p
-                    className="font-sans text-maya-body font-light leading-relaxed whitespace-pre-line max-w-xl"
-                    style={{
-                      color: "var(--col-text-muted, rgba(255,255,255,0.85))",
-                    }}
-                  >
-                    {block.content}
-                  </p>
+      {/* ---- CELULAR: mosaico + ficha con placa deslizable ---- */}
+      <div className="md:hidden space-y-4">
+        <div className="p-3 rounded-2xs bg-col-card/70 border border-col-card-border">
+          <div className="grid grid-cols-4 min-[380px]:grid-cols-5 gap-1.5">
+            {materials.map((mat) => {
+              const displayImg = mat.image || collection?.cover_image || null;
+              const displayName = mat.aka || mat.name;
+              const isSelected = selectedMaterial?.sku === mat.sku;
 
-                  {block.bullets && block.bullets.length > 0 && (
-                    <ul
-                      className="space-y-1.5 pt-2 border-t"
-                      style={{
-                        borderColor: "rgba(255,255,255,0.1)",
-                      }}
-                    >
-                      {block.bullets
-                        .filter(Boolean)
-                        .map((bullet: string, bIdx: number) => (
-                          <li
-                            key={bIdx}
-                            className="font-sans text-maya-small font-light leading-relaxed"
-                            style={{
-                              color:
-                                "var(--col-text-muted, rgba(255,255,255,0.8))",
-                            }}
-                          >
-                            • {bullet}
-                          </li>
-                        ))}
-                    </ul>
-                  )}
-
-                  {block.curatorialNote && (
-                    <div
-                      className="border-l-2 pl-3.5 py-1.5 my-2 rounded-r-2xs space-y-1"
-                      style={{
-                        borderColor: "var(--col-accent, #E5DFC8)",
-                        backgroundColor: "rgba(0,0,0,0.15)",
-                      }}
-                    >
-                      <span
-                        className="font-mono text-maya-label uppercase tracking-data font-semibold block"
-                        style={{ color: "var(--col-accent, #E5DFC8)" }}
-                      >
-                        {t?.curatorial_note_label || "Nota Curatorial"}
-                      </span>
-                      <p
-                        className="font-serif italic text-maya-small leading-relaxed"
-                        style={{ color: "var(--col-text, #FFFFFF)" }}
-                      >
-                        &ldquo;{block.curatorialNote}&rdquo;
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {block.computedImage && (
-                  <div
-                    className={`lg:col-span-6 flex justify-center ${
-                      isEven ? "lg:order-2" : "lg:order-1"
-                    }`}
-                  >
-                    <div
-                      className="relative w-full max-w-[460px] aspect-4/3 sm:aspect-16/10 overflow-hidden rounded-2xs shadow-xl border"
-                      style={{
-                        borderColor: "rgba(255,255,255,0.1)",
-                        backgroundColor: "rgba(0,0,0,0.2)",
-                      }}
-                    >
-                      <Image
-                        src={block.computedImage}
-                        alt={block.title}
-                        fill
-                        sizes="(max-width: 1024px) 100vw, 50vw"
-                        className="object-cover block transition-transform duration-700 hover:scale-105"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* SECCIÓN 4: FICHA DIAGRAMÁTICA */}
-      {selectedMaterial && (
-        <div ref={specRef} className="space-y-3.5">
-          <MaterialSpecDiagram
-            material={selectedMaterial}
-            collectionCover={collection?.cover_image}
-            activeMediaUrl={currentMedia?.url}
-            lang={lang}
-            dict={dict}
-          />
-
-          {mediaGallery.length > 1 && (
-            <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1 no-scrollbar font-mono text-maya-label pt-1">
-              <span
-                className="uppercase shrink-0 font-mono tracking-data"
-                style={{
-                  color: "var(--col-text-muted, rgba(255,255,255,0.6))",
-                }}
-              >
-                {t?.views_available || "Vistas"}
-              </span>
-              {mediaGallery.map((med, idx) => (
+              return (
                 <button
-                  key={med.id}
+                  key={mat.sku}
                   type="button"
-                  onClick={() => setActiveMediaIdx(idx)}
-                  aria-label={med.label}
-                  style={
-                    activeMediaIdx === idx
-                      ? {
-                          backgroundColor: "var(--col-text, #FFFFFF)",
-                          color: "var(--col-bg, #000000)",
-                          borderColor: "var(--col-text, #FFFFFF)",
-                        }
-                      : {
-                          borderColor:
-                            "var(--col-border, rgba(255,255,255,0.2))",
-                          color: "var(--col-text, #FFFFFF)",
-                        }
-                  }
-                  className={`px-3 py-1 uppercase tracking-data transition-all border shrink-0 flex items-center gap-1.5 cursor-pointer focus:outline-none rounded-3xs ${
-                    activeMediaIdx === idx
-                      ? "font-bold shadow-md"
-                      : "bg-transparent opacity-75 hover:opacity-100"
+                  onClick={() => handleSelectMaterial(mat, false)}
+                  aria-label={displayName}
+                  aria-pressed={isSelected}
+                  className={`relative aspect-square rounded-3xs overflow-hidden border transition-all duration-300 bg-black-neutral cursor-pointer ${
+                    isSelected
+                      ? "border-col-accent ring-1 ring-col-accent shadow-sm"
+                      : "border-col-media/70 opacity-80"
                   }`}
                 >
-                  <span
-                    className="h-1 w-1 rounded-full"
-                    style={{
-                      backgroundColor:
-                        activeMediaIdx === idx
-                          ? "var(--col-bg, #000000)"
-                          : "var(--col-text, #FFFFFF)",
-                    }}
-                  />
-                  <span>{med.label}</span>
+                  {displayImg ? (
+                    <Image
+                      src={displayImg}
+                      alt=""
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="w-full h-full flex items-center justify-center font-mono text-[8px] text-col-muted">
+                      —
+                    </span>
+                  )}
+                  {isSelected && (
+                    <span className="absolute inset-0 border-2 border-col-accent pointer-events-none" />
+                  )}
                 </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* SECCIÓN 5: MUESTRARIO */}
-      <div className="space-y-4 pt-2">
-        <div
-          className="flex justify-between items-center pb-2 border-b"
-          style={{ borderColor: "var(--col-border, rgba(255,255,255,0.15))" }}
-        >
-          <span
-            className="font-mono text-maya-label uppercase tracking-data font-semibold"
-            style={{ color: "var(--col-accent, #E5DFC8)" }}
-          >
-            {t?.materials_catalogue_title || "Muestrario de Piedras Naturales"}
-          </span>
-          <span
-            className="font-mono text-maya-label uppercase tracking-data hidden sm:block opacity-60"
-            style={{
-              color: "var(--col-text-muted, rgba(255,255,255,0.5))",
-            }}
-          >
-            {t?.materials_catalogue_hint}
-          </span>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+        {selectedMaterial && (
+          <div ref={specRef} className="scroll-mt-24">
+            <MaterialSpecDiagram
+              material={selectedMaterial}
+              collectionCover={collection?.cover_image}
+              index={selectedIndex}
+              total={materials.length}
+              onPrev={() => goToMaterial(-1)}
+              onNext={() => goToMaterial(1)}
+              lang={lang}
+              dict={dict}
+              cta={
+                t?.availability_cta
+                  ? { href: availabilityHref, label: t.availability_cta }
+                  : undefined
+              }
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ---- TABLET Y ESCRITORIO: muestrario + ficha fija al lado ---- */}
+      <div
+        ref={desktopRef}
+        className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)] gap-8 lg:gap-12 items-start scroll-mt-24"
+      >
+        <div className={`grid ${gridCols} justify-center gap-x-3 gap-y-5 lg:gap-x-4 lg:gap-y-6`}>
           {materials.map((mat) => (
             <CollectionMaterialCard
               key={mat.sku}
               material={mat}
               collectionCover={collection?.cover_image}
               isSelected={selectedMaterial?.sku === mat.sku}
-              onSelect={() => handleSelectMaterial(mat)}
+              onSelect={() => handleSelectMaterial(mat, false)}
+              onPreview={() => preloadSpec(mat)}
               dict={dict}
             />
           ))}
         </div>
+
+        {selectedMaterial && (
+          <aside className="md:sticky md:top-24">
+            <MaterialSpecPanel
+              material={selectedMaterial}
+              collectionCover={collection?.cover_image}
+              index={selectedIndex}
+              total={materials.length}
+              onPrev={() => goToMaterial(-1)}
+              onNext={() => goToMaterial(1)}
+              dict={dict}
+              cta={
+                t?.availability_cta
+                  ? { href: availabilityHref, label: t.availability_cta }
+                  : undefined
+              }
+            />
+          </aside>
+        )}
       </div>
 
-      {/* SECCIÓN 6: MOODBOARD */}
-      {remainingMoodboardImages.length > 0 && (
-        <div
-          className="space-y-4 pt-4 mt-8 sm:mt-12 border-t"
-          style={{ borderColor: "var(--col-border, rgba(255,255,255,0.15))" }}
-        >
-          <div className="pb-1">
-            <span
-              className="font-mono text-maya-label uppercase tracking-data font-semibold"
-              style={{ color: "var(--col-accent, #E5DFC8)" }}
-            >
-              {t?.moodboard_title || "Atmósferas & Texturas"}
-            </span>
-          </div>
+      </div>
 
-          <div className="columns-2 sm:columns-3 lg:columns-4 gap-3.5 sm:gap-5 space-y-3.5 sm:space-y-5">
-            {remainingMoodboardImages.filter(Boolean).map((mediaUrl, idx) => {
-              const isVid = isVideoUrl(mediaUrl);
-              return (
-                <div
-                  key={idx}
-                  className="break-inside-avoid relative overflow-hidden group transition-transform duration-500 hover:scale-[1.01] rounded-2xs border shadow-lg"
-                  style={{
-                    borderColor: "rgba(255,255,255,0.15)",
-                  }}
-                >
-                  {isVid ? (
-                    <video
-                      src={mediaUrl}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-auto block border-0 outline-none bg-black"
-                    />
-                  ) : (
-                    <Image
-                      src={mediaUrl}
-                      alt={`Moodboard ${idx + 1}`}
-                      width={800}
-                      height={600}
-                      className="w-full h-auto block group-hover:scale-103 transition-transform duration-700 ease-out"
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <div className="editorial-container">
+      {/* SECCIÓN 5: CATÁLOGO DIGITAL DESCARGABLE */}
+      <CollectionCatalogDownload
+        url={collection.catalog_url}
+        collectionTitle={title || ""}
+        logoUrl={collection.logo_url}
+        coverImage={collection.cover_image}
+        lang={lang}
+        dict={dict}
+      />
+      </div>
     </article>
   );
 }

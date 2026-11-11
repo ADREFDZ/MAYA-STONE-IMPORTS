@@ -33,17 +33,6 @@ export interface MaterialItem {
   renders: MaterialRender[];
 }
 
-export interface EditorialBlock {
-  id: string;
-  title: string;
-  subtitle?: string;
-  content: string;
-  curatorialNote?: string;
-  imageUrl?: string;
-  bullets?: string[];
-  layout?: "split-right" | "split-left" | "full-width" | "cards";
-}
-
 export interface CollectionItem {
   id: string;
   slug: string;
@@ -58,7 +47,8 @@ export interface CollectionItem {
   is_active: boolean;
   sort_order?: number;
   materials: MaterialItem[];
-  editorial_blocks?: EditorialBlock[];
+  /** PDF del catálogo digital descargable */
+  catalog_url?: string | null;
 }
 
 // =============================================================================
@@ -110,25 +100,6 @@ export interface DbCollectionProduct {
   products?: DbProduct | DbProduct[] | null;
 }
 
-export interface DbEditorialBlock {
-  id: string;
-  title?: I18nValue;
-  title_en?: string | null;
-  title_es?: string | null;
-  subtitle?: I18nValue;
-  subtitle_en?: string | null;
-  subtitle_es?: string | null;
-  content?: I18nValue;
-  content_en?: string | null;
-  content_es?: string | null;
-  curatorialNote?: I18nValue;
-  curatorialNote_en?: string | null;
-  curatorialNote_es?: string | null;
-  imageUrl?: string | null;
-  bullets?: string[] | null;
-  layout?: "split-right" | "split-left" | "full-width" | "cards";
-}
-
 export interface DbCollection {
   id: string;
   slug: string;
@@ -148,7 +119,7 @@ export interface DbCollection {
   logo_url?: string | null;
   video_url?: string | null;
   gallery_images?: string[] | null;
-  editorial_blocks?: DbEditorialBlock[] | string | null;
+  catalog_url?: string | null;
   is_active: boolean;
   sort_order?: number | null;
   collection_products?: DbCollectionProduct[] | null;
@@ -277,45 +248,6 @@ export async function getActiveCollectionsAction(
         })
         .filter((item): item is MaterialItem => item !== null);
 
-      let parsedBlocks: DbEditorialBlock[] = [];
-      if (Array.isArray(col.editorial_blocks)) {
-        parsedBlocks = col.editorial_blocks;
-      } else if (typeof col.editorial_blocks === "string") {
-        try {
-          parsedBlocks = JSON.parse(col.editorial_blocks || "[]");
-        } catch {
-          parsedBlocks = [];
-        }
-      }
-
-      const editorial_blocks: EditorialBlock[] = parsedBlocks.map(
-        (b): EditorialBlock => ({
-          id: b.id,
-          title: resolveI18nString(b.title, b.title_en, b.title_es, lang),
-          subtitle: resolveI18nString(
-            b.subtitle,
-            b.subtitle_en,
-            b.subtitle_es,
-            lang,
-          ),
-          content: resolveI18nString(
-            b.content,
-            b.content_en,
-            b.content_es,
-            lang,
-          ),
-          curatorialNote: resolveI18nString(
-            b.curatorialNote,
-            b.curatorialNote_en,
-            b.curatorialNote_es,
-            lang,
-          ),
-          imageUrl: b.imageUrl || "",
-          bullets: Array.isArray(b.bullets) ? b.bullets : [],
-          layout: b.layout,
-        }),
-      );
-
       const title = resolveI18nString(
         col.title,
         col.title_en,
@@ -357,7 +289,7 @@ export async function getActiveCollectionsAction(
         is_active: col.is_active,
         sort_order: col.sort_order || 0,
         materials,
-        editorial_blocks,
+        catalog_url: col.catalog_url || null,
       };
     });
   } catch (err: unknown) {

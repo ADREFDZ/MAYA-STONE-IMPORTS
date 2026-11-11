@@ -1,20 +1,101 @@
 {
+  "seo": {
+    "site": {
+      "title": "MAYA | Nature Redefined as a Design Object",
+      "description": "A collective of studios dedicated to the honest curation of natural matter. Marbles, quartzites, travertines, and fine hardwoods endowing architecture with intimacy, permanence, and deep time.",
+      "keywords": [
+        "Natural surfaces for architecture",
+        "Natural stone curation",
+        "Luxury imported marble",
+        "Exotic quartzite slabs",
+        "High-end interior design",
+        "MAYA Stone Imports",
+        "Nature redefined as a design object",
+        "Honest curation of the Earth",
+        "Natural matter for architecture",
+        "Curated marble and quartzite slabs",
+        "Architectural travertine",
+        "Fine hardwoods for interior design",
+        "Contemplative architectural surfaces",
+        "MAYA Group"
+      ],
+      "og_description": "A counterpoint to artificial replicas: mineral surfaces and noble timber curated as geological time capsules.",
+      "og_image_alt": "MAYA Stone Imports",
+      "twitter_description": "Nature creates the material. Architecture gives it meaning. MAYA bridges both worlds."
+    },
+    "home": {
+      "title": "MAYA | Nature Redefined as a Design Object",
+      "description": "Marble, quartzite, travertine and fine hardwoods for architecture and interior design. Request a quote or visit our showroom in León."
+    },
+    "about": {
+      "title": "Our Conviction & Manifesto | Honest Curation of the Earth",
+      "description": "Architecture begins long before the building. Discover MAYA's philosophy: a deliberate, slow rhythm prioritizing permanence over ephemeral trends.",
+      "og_title": "Brand Manifesto & Philosophy | MAYA",
+      "og_description": "We don't believe in absolute truths; we believe in what stands firm when the shine fades away."
+    },
+    "architecture": {
+      "title": "From Architectural Intent to Matter | Landmark Works & Bespoke Craft",
+      "description": "High-end residential and luxury hospitality projects crafted with natural stone and fine timber: St. Regis, Amanvari, and bespoke private estates.",
+      "og_title": "Architecture & Landmark Projects | MAYA",
+      "og_description": "Where architectural precision and authentic natural materials sustain lasting permanence."
+    },
+    "project": {
+      "not_found": "Project not found",
+      "title": "{project} | Architectural Landmark & Curation",
+      "description_fallback": "Architectural intervention in {location} featuring natural matter curated by MAYA."
+    },
+    "contact": {
+      "title": "Contact | Request a quote or book your showroom visit",
+      "description": "Request a quote for marble, quartzite, travertine and fine hardwoods, check availability, ask for samples or book a private visit to our showroom in León.",
+      "og_title": "Contact & Showroom | MAYA",
+      "og_description": "Request a quote, check availability or book your showroom visit."
+    },
+    "collection": {
+      "title": "Curation of Matter · Natural Stone & Fine Hardwoods",
+      "description": "Editorial archive of marble, quartzite, travertine, and fine hardwoods curated for architectural permanence and geological presence.",
+      "not_found": "Collection not found",
+      "collection_title": "{collection} Collection · Curation of Matter",
+      "collection_description": "{collection} Collection: {materials}. Natural surfaces curated for geological narrative, thermal inertia, and timeless architecture.",
+      "material_title": "{material} · {collection} Collection",
+      "material_description": "{material}, curated {category}{origin}. Natural architectural surface selected for enduring permanence.",
+      "category_fallback": "natural stone"
+    },
+    "cookies": {
+      "description": "Detailed information regarding cookies, local storage, and third-party technologies used on the MAYA Stone Imports website."
+    },
+    "terms": {
+      "description": "Terms and conditions governing the access, navigation, and use of the MAYA Stone Imports website."
+    },
+    "brand": {
+      "description": "A collective of studios dedicated to the curation of natural matter: marble, quartzite, travertine, granite, and noble timber for architecture and interior design.",
+      "slogan": "Nature redefined as a design object.",
+      "knows_about": [
+        "Natural surfaces for architecture",
+        "Natural stone curation",
+        "Marble and quartzite sourcing",
+        "High-end travertine",
+        "Fine hardwoods for interior design",
+        "Luxury marble in Mexico",
+        "Imported quartzite",
+        "Luxury interior design"
+      ]
+    }
+  },
   "navbar": {
     "coleccion": "COLLECTION",
     "arquitectura": "ARCHITECTURE",
-    "bespoke": "BESPOKE",
-    "estudio": "STUDIOS",
     "about": "ABOUT MAYA",
     "contacto": "CONTACT",
     "menu_open": "Open menu",
     "menu_close": "Close menu",
-    "admin_panel": "Admin Panel"
+    "admin_panel": "Admin Panel",
+    "home_aria": "MAYA Home"
   },
   "footer": {
-    "brand_desc": "Specialized studio group in the curation and selection of authentic natural matter for contemporary architecture.",
+    "brand_desc": "A curation studio for natural stone and fine hardwoods for architecture and interior design. León, Guanajuato.",
     "contact_title": "Contact",
     "contact_address": "Leon, Guanajuato\nMexico",
-    "contact_phone": "+52 (477) 854 4033",
+    "contact_phone": "+52 (477) 704 0874",
     "contact_email": "info@gpomaya.com",
     "legal_privacy": "Privacy Policy",
     "legal_terms": "Terms & Conditions",
@@ -27,12 +108,12 @@
   "privacy_page": {
     "meta": "LEGAL COMPLIANCE & PRIVACY",
     "title": "Comprehensive Privacy Notice",
-    "last_updated": "Last updated: [FECHA]",
+    "last_updated": "Last updated: October 19, 2026",
     "back_button": "Go back to previous page",
     "sections": [
       {
         "title": "1. Identity and address of the data controller",
-        "content": "MAYA STONE IMPORTS, [RAZÓN SOCIAL COMPLETA] (hereinafter, \"MAYA\"), located at [DOMICILIO COMPLETO], is responsible for processing personal data collected from clients, prospects, users, visitors, suppliers, and other data subjects interacting with MAYA.\n• Privacy inquiries email: [CORREO DE PRIVACIDAD]\n• Telephone: [TELÉFONO]"
+        "content": "MAYA STONE IMPORTS, S.A. DE C.V. (hereinafter, \"MAYA\"), located at Blvd. Francisco Villa 4602, Warehouse A4, Col. León I, Zip Code 37235, León, Guanajuato, Mexico, is the data controller responsible for processing personal data collected from clients, prospects, users, visitors, suppliers, and any other data subjects interacting with MAYA.\n• Privacy contact: info@gpomaya.com\n• Phone & WhatsApp: +52 477 704 0874"
       },
       {
         "title": "2. Personal data we collect",
@@ -44,7 +125,7 @@
       },
       {
         "title": "4. Means of collection",
-        "content": "Website forms; requests for information, quotes, or showroom appointments; email; phone; WhatsApp; and administrative user accounts where applicable."
+        "content": "Website forms; requests for information, quotes, or showroom appointments; email; phone; WhatsApp messages to +52 477 704 0874; and administrative user accounts where applicable."
       },
       {
         "title": "5. Primary purposes (strictly necessary)",
@@ -52,7 +133,7 @@
       },
       {
         "title": "6. Secondary purposes (consent required)",
-        "content": "Sending newsletters, updates on new materials, promotional communications, event invitations, and service satisfaction surveys.\nYou may opt out of secondary purposes without affecting your main inquiry by emailing [CORREO DE PRIVACIDAD] with the subject \"Opt-out of secondary purposes\"."
+        "content": "Sending newsletters and emails about new materials, collections, projects, or updates; commercial and promotional communications; event invitations; satisfaction surveys; and statistical analysis to improve our website and services.\nYou may opt out of these purposes at any time, without affecting the handling of your main request, by emailing info@gpomaya.com with the subject \"Opt-out of secondary purposes\". Every promotional email will also include an option to unsubscribe."
       },
       {
         "title": "7. Consent",
@@ -60,11 +141,11 @@
       },
       {
         "title": "8. Technology service providers",
-        "content": "MAYA relies on technology vendors for infrastructure and operations: Supabase, Meta, Google Maps, Behold (Instagram feed), and Google Gemini (internal administration tools). Full details in our [Cookie Policy](/cookie-policy).\nSupabase project region: us-west-2."
+        "content": "MAYA relies on technology vendors that process data on MAYA's behalf for infrastructure, website hosting, storage, authentication, maps, social media content, measurement, and internal administration, including: Supabase (database, authentication, and files; region us-west-2, United States), the website hosting provider and its metrics tools, Meta (official Instagram API, Meta Pixel, and WhatsApp), Google Maps, and Google Gemini (internal administration). Details for each are available in our [Cookie Policy & Third-Party Technologies](/cookie-policy)."
       },
       {
         "title": "9. Data transfers",
-        "content": "MAYA may transfer data only to comply with legal mandates, serve your specific service requests, or when permitted by applicable Mexican legislation."
+        "content": "MAYA may transfer data when necessary to comply with legal obligations, provide the services you requested, respond to requests from competent authorities, or when the transfer is permitted by law without requiring your consent. MAYA does not sell your personal data. Some of our technology vendors host information outside Mexico (for example, in the United States); in those cases they act as processors on MAYA's behalf and processing follows applicable Mexican law."
       },
       {
         "title": "10. ARCO Rights",
@@ -72,15 +153,15 @@
       },
       {
         "title": "11. Procedure for exercising ARCO rights",
-        "content": "Send a request to [CORREO DE PRIVACIDAD] with the subject \"ARCO Rights Request\", providing your full name, contact details, the specific right you wish to exercise, and proof of identity.\nMAYA will respond within a maximum of 20 business days (extendable by 10 days if justified). Exercising these rights is free of charge."
+        "content": "Send a request to info@gpomaya.com with the subject \"ARCO Rights Request\", providing your full name, contact details, the specific right you wish to exercise, and proof of identity.\nMAYA will respond within a maximum of 20 business days (extendable by 10 days if justified). Exercising these rights is free of charge."
       },
       {
         "title": "12. Revocation of consent",
-        "content": "You may revoke your consent at any time by emailing [CORREO DE PRIVACIDAD] with the subject \"Consent Revocation\"."
+        "content": "You may revoke your consent at any time by emailing info@gpomaya.com with the subject \"Consent Revocation\"."
       },
       {
         "title": "13. Limitation of use or disclosure",
-        "content": "To limit the disclosure of your information or unsubscribe from communications, write to [CORREO DE PRIVACIDAD] with the subject \"Data Limitation\"."
+        "content": "To limit the disclosure of your information or unsubscribe from communications, write to info@gpomaya.com with the subject \"Data Limitation\"."
       },
       {
         "title": "14. Cookies and tracking technologies",
@@ -96,7 +177,7 @@
       },
       {
         "title": "17. Minors",
-        "content": "This website is not aimed at minors. If a minor has submitted personal data without parental authorization, contact [CORREO DE PRIVACIDAD] for prompt removal."
+        "content": "This website is not aimed at minors. If a minor has submitted personal data without parental authorization, contact info@gpomaya.com for prompt removal."
       },
       {
         "title": "18. Competent authority",
@@ -108,19 +189,19 @@
       },
       {
         "title": "20. Contact",
-        "content": "MAYA Stone Imports\n• Corporate entity: [RAZÓN SOCIAL]\n• Address: [DOMICILIO COMPLETO]\n• Privacy contact: [CORREO]\n• Phone: [TELÉFONO]\n• Website: [gpomaya.com](/)\n• Last updated: [FECHA]"
+        "content": "MAYA Stone Imports\n• Legal entity: MAYA STONE IMPORTS, S.A. DE C.V.\n• Address: Blvd. Francisco Villa 4602, Warehouse A4, Col. León I, Zip Code 37235, León, Guanajuato, Mexico\n• Email: [info@gpomaya.com](mailto:info@gpomaya.com)\n• Phone & WhatsApp: +52 477 704 0874\n• Website: [gpomaya.com](/)\n• Last updated: October 19, 2026"
       }
     ]
   },
   "terms_page": {
     "meta": "LEGAL FRAMEWORK",
     "title": "Terms & Conditions of Use",
-    "last_updated": "Last updated: [FECHA]",
+    "last_updated": "Last updated: October 19, 2026",
     "back_button": "Go back to previous page",
     "sections": [
       {
         "title": "1. Identification",
-        "content": "These Terms govern the access and use of the MAYA Stone Imports website operated by [RAZÓN SOCIAL COMPLETA].\n• Website: [gpomaya.com](/)\n• Address: [DOMICILIO COMPLETO]\n• Email: [CORREO GENERAL]\n• Phone: [TELÉFONO]"
+        "content": "These Terms govern access to and use of the MAYA Stone Imports website, operated by MAYA STONE IMPORTS, S.A. DE C.V..\n• Website: [gpomaya.com](/)\n• Address: Blvd. Francisco Villa 4602, Warehouse A4, Col. León I, Zip Code 37235, León, Guanajuato, Mexico\n• Email: info@gpomaya.com\n• Phone & WhatsApp: +52 477 704 0874"
       },
       {
         "title": "2. Purpose",
@@ -204,7 +285,7 @@
       },
       {
         "title": "22. Applicable law & jurisdiction",
-        "content": "Governed by the applicable laws of Mexico. Parties submit to the competent courts of [CIUDAD/ESTADO], waiving any other jurisdiction."
+        "content": "Governed by the applicable laws of Mexico. Parties submit to the competent courts of León, Guanajuato, Mexico, waiving any other jurisdiction."
       },
       {
         "title": "23. Modifications",
@@ -212,89 +293,92 @@
       },
       {
         "title": "24. Contact",
-        "content": "MAYA Stone Imports\n• Corporate entity: [RAZÓN SOCIAL]\n• Address: [DOMICILIO COMPLETO]\n• Privacy contact: [CORREO]\n• Phone: [TELÉFONO]\n• Website: [gpomaya.com](/)\n• Last updated: [FECHA]"
+        "content": "MAYA Stone Imports\n• Legal entity: MAYA STONE IMPORTS, S.A. DE C.V.\n• Address: Blvd. Francisco Villa 4602, Warehouse A4, Col. León I, Zip Code 37235, León, Guanajuato, Mexico\n• Email: [info@gpomaya.com](mailto:info@gpomaya.com)\n• Phone & WhatsApp: +52 477 704 0874\n• Website: [gpomaya.com](/)\n• Last updated: October 19, 2026"
       }
     ]
   },
   "cookies_page": {
     "meta": "DIGITAL TRANSPARENCY",
     "title": "Cookie Policy & Third-Party Technologies",
-    "last_updated": "Last updated: [FECHA]",
+    "last_updated": "Last updated: October 19, 2026",
     "back_button": "Go back to previous page",
     "sections": [
       {
         "title": "1. What are cookies",
-        "content": "Cookies and local storage identifiers are digital markers stored on your device to ensure website performance, security, and remember preferences."
+        "content": "Cookies are files or identifiers that may be stored on your device while browsing our website. We also use local storage, pixels, tags, identifiers, and similar technologies."
       },
       {
         "title": "2. Purpose of use",
-        "content": "For platform operation, preserving language selection, maintaining active sessions, recording consent choices, and measuring traffic performance."
+        "content": "To operate the website, remember your language and preferences, keep sessions active, protect restricted areas, record your consent decision, measure website performance and, when you authorize it, measure our marketing campaigns."
       },
       {
         "title": "3. Categories",
-        "content": "• Strictly Necessary: Language choice (NEXT_LOCALE), user sessions, security, and consent records. Cannot be disabled.\n• Analytics: Aggregated metrics on architectural catalogue interactions.\n• Marketing (Meta Pixel): Campaign attribution enabled exclusively upon your prior consent."
+        "content": "• Strictly necessary: language, sessions, authentication, security, and consent records. They cannot be disabled because the website would not work properly without them.\n• Analytics & performance: visit statistics, pages viewed, events, and site speed, obtained through on-site tools, our hosting provider's metrics, and analytics applications. We use them to periodically review and improve website performance.\n• Marketing: campaign and ad-interaction measurement through Meta Pixel. Only activated if you accept."
       },
       {
         "title": "4. First-party technologies",
-        "content": "NEXT_LOCALE preserves language selection. Local storage remembers consent decisions. Session cookies safeguard administrative access."
+        "content": "• NEXT_LOCALE: remembers your selected language. Duration: 1 year.\n• Consent decision (local storage): remembers whether you accepted or declined non-essential cookies. Duration: 180 days if accepted and 60 days if declined; after that we will ask again.\n• Session and security cookies: keep you signed in if you have an account with us and protect restricted areas of the site (admin panel). They last for the session or the corresponding security period."
       },
       {
         "title": "5. Supabase",
-        "content": "We rely on Supabase for database, authentication, and media storage for project collections and inventories.\n• Project region: us-west-2."
+        "content": "We use Supabase for our database, user authentication, sessions, and file storage (project, collection, catalogue, and inventory images). It processes the information you provide through our forms.\n• Project region: us-west-2 (United States)."
       },
       {
-        "title": "6. Meta (Meta Pixel)",
-        "content": "Ad measurement technology loaded only after marketing cookies are approved in our consent banner. If declined, Meta Pixel is not loaded."
+        "title": "6. Hosting & site analytics",
+        "content": "Our hosting provider and the analytics tools we use may log technical browsing data (such as IP address, browser, device, pages viewed, and load times) to operate the website securely and generate performance metrics. We use this information in aggregate to improve the site, not to personally identify you."
       },
       {
-        "title": "7. Google Maps",
-        "content": "Used to display our showroom locations. Google may process interaction telemetry per their privacy policies."
+        "title": "7. Meta (Meta Pixel)",
+        "content": "We use Meta technology to measure the performance of our advertising campaigns. This script is only loaded after you accept cookies in our consent banner; if you decline or do not respond, Meta Pixel is not activated in your browser."
       },
       {
-        "title": "8. Behold (Instagram feed)",
-        "content": "Technology provider used to embed our curated @gpomaya Instagram visual portfolio."
+        "title": "8. Instagram (official Meta API)",
+        "content": "We display posts from our @gpomaya Instagram account obtained through Meta's official Instagram API. Images and videos are loaded from Meta's servers, so Meta may receive technical data about your connection (such as your IP address). If you click a post or our profile, you will be taken to Instagram and its own policies will apply."
       },
       {
-        "title": "9. Instagram",
-        "content": "Direct interactions with linked Instagram profiles are subject to platform policies."
+        "title": "9. Google Maps",
+        "content": "We use Google Maps on our contact page to show the location of our showrooms and studios. When the map loads, Google may process technical information and set its own cookies under its privacy policies."
       },
       {
         "title": "10. Google Gemini",
-        "content": "Internal administrative tool for curation translations, strictly restricted to authorized staff without automated user data forwarding."
+        "content": "We use Google Gemini as an internal tool for administration and content translation. This integration is restricted to our authorized team and does not automatically send our visitors' contact data to this service."
       },
       {
         "title": "11. WhatsApp",
-        "content": "External direct communication governed by WhatsApp/Meta terms."
+        "content": "You can contact us on WhatsApp at +52 477 704 0874. When using this external platform, WhatsApp/Meta's own terms and policies apply."
       },
       {
         "title": "12. Your consent",
-        "content": "Non-essential cookies remain disabled until accepted in the initial banner. Necessary cookies remain active for platform functionality."
+        "content": "When you visit our website, we show a banner where you can Accept or Decline non-essential cookies (analytics and marketing). Strictly necessary cookies always remain active, as the website would not work properly without them. Until you make a choice, non-essential cookies remain disabled."
       },
       {
         "title": "13. Modifying your choice",
-        "content": "Consent decisions are stored in your browser. You can clear your browser cookies or use the Cookie Preferences button at the bottom of our pages."
+        "content": "You can change your decision at any time using the \"Cookie Preferences\" button at the bottom of every page. You can also clear this site's cookies and browsing data from your browser settings; the consent banner will appear again on your next visit."
       },
       {
         "title": "14. Browser-level blocking",
-        "content": "You may configure your browser to block cookies in general, which may impact certain site capabilities."
+        "content": "You may configure your browser to block cookies in general, although this may affect how some parts of the website work."
       },
       {
         "title": "15. Retention",
-        "content": "First-party and third-party cookies possess varying retention lifespans according to their technical function."
+        "content": "The durations of our first-party technologies are listed in section 4. Third-party cookie durations depend on each provider's policy (Meta, Google, and our hosting provider)."
       },
       {
         "title": "16. Security",
-        "content": "We enforce reasonable safeguards across these systems, though absolute Internet immunity cannot be guaranteed."
+        "content": "We implement reasonable safeguards to protect our systems and the technologies described in this policy, although absolute security on the Internet cannot be guaranteed."
       },
       {
         "title": "17. Policy modifications",
-        "content": "This policy may be updated as integrated technologies change. Current version available in this [Cookie Policy](/cookie-policy)."
+        "content": "We may update this Policy when we add, remove, or modify technologies or providers, or when applicable legal requirements change. The current version will always be available in this [Cookie Policy](/cookie-policy)."
       },
       {
         "title": "18. Contact",
-        "content": "MAYA Stone Imports\n• Corporate entity: [RAZÓN SOCIAL]\n• Address: [DOMICILIO COMPLETO]\n• Privacy contact: [CORREO]\n• Phone: [TELÉFONO]\n• Website: [gpomaya.com](/)\n• Last updated: [FECHA]"
+        "content": "MAYA Stone Imports\n• Legal entity: MAYA STONE IMPORTS, S.A. DE C.V.\n• Address: Blvd. Francisco Villa 4602, Warehouse A4, Col. León I, Zip Code 37235, León, Guanajuato, Mexico\n• Email: [info@gpomaya.com](mailto:info@gpomaya.com)\n• Phone & WhatsApp: +52 477 704 0874\n• Website: [gpomaya.com](/)\n• Last updated: October 19, 2026"
       }
-    ]
+    ],
+    "settings_title": "Cookie Settings Panel",
+    "settings_text": "Click the button below to re-open the consent banner and update your analytics and marketing cookie preferences.",
+    "settings_button": "Update Preferences"
   },
   "cookie_consent": {
     "message": "We use cookies and analytics technologies to understand how you interact with our architectural archive and improve your experience.",
@@ -308,61 +392,57 @@
     "line1": "Nature creates the material.",
     "line2": "Architecture gives it meaning.",
     "line3": "MAYA connects both worlds.",
+    "subtitle": "Natural stone and fine hardwoods for architects, interior designers and developers. Request a quote and check availability with a team that knows every lot.",
     "cta_explore": "EXPLORE COLLECTION",
-    "cta_visit": "SCHEDULE A VISIT"
+    "cta_quote": "REQUEST A QUOTE"
   },
   "philosophy": {
-    "section_label": "BRAND PHILOSOPHY",
-    "title": "We select and interpret natural matter for each architectural vision.",
-    "description": "We are a group of specialized studios dedicated to the curation and selection of quarry stones and noble hardwoods for architecture and interior design. We facilitate aesthetic decisions that define permanence and spatial intimacy.",
-    "cta_studio": "Learn about MAYA",
-    "pillars": [
+    "section_label": "OUR CRITERIA",
+    "title": "We don't sell options in bulk. We help you find the stone that answers to your project.",
+    "description": "MAYA is a natural materials curation studio. Our team knows every material and every lot: we show you the actual slab, tell you what's available and stay with you until it reaches the site.",
+    "cta_studio": "Discover our criteria"
+  },
+  "process": {
+    "section_label": "HOW WE WORK",
+    "title": "Getting a quote from MAYA is simple",
+    "steps": [
       {
-        "label": "01",
-        "title": "Curation with Criteria",
-        "desc": "Surfaces meticulously selected for their geological narrative, purity, and structural performance in space."
+        "num": "01",
+        "title": "Choose your material",
+        "desc": "From the collection, or tell us the veining, format and finish you're after."
       },
       {
-        "label": "02",
-        "title": "The Slow Process",
-        "desc": "Personalized and timeless guidance that strictly respects the natural rhythm in which visionary ideas mature."
+        "num": "02",
+        "title": "Get a quote and availability",
+        "desc": "With photos of the actual lot, pricing and delivery times."
       },
       {
-        "label": "03",
-        "title": "Inspiration Capsules",
-        "desc": "We present each material in its purest context, allowing you to envision how it interacts with light, space, and daily life."
-      },
-      {
-        "label": "04",
-        "title": "Tools of Connection",
-        "desc": "An infrastructure of digital libraries and physical samples tailored to touch, feel, and interpret raw quarry stone."
+        "num": "03",
+        "title": "Approve it and receive it on site",
+        "desc": "Review it at our showroom or with samples; we coordinate delivery."
       }
-    ]
+    ],
+    "cta": "REQUEST A QUOTE"
   },
   "categories_bento": {
     "meta": "Curated catalogue",
-    "title": "Featured collection",
-    "description": "We select fragments of mineral and botanical history capable of responding to authentic architectural and structural intentions.",
-    "badge_curated": "CURATED COLLECTION",
+    "title": "Material with its own character",
     "cta_explore_col": "EXPLORE COLLECTION",
     "default_title": "Collection",
-    "loading": "Loading collections..."
+    "cta_view_all": "View all collections",
+    "close": "Close"
   },
   "collection": {
     "meta": "Featured material",
-    "title": "One material, endless possibilities.",
+    "title": "One material, many ways to inhabit it.",
     "cta_explore": "Explore this piece",
+    "cta_availability": "Check availability",
     "cta_all": "View full collection",
-    "variations_label": "Related pieces and variations",
-    "portfolio_renders": "Visual portfolio & renders",
-    "badge_cover": "Cover",
-    "loading": "Loading catalogue...",
-    "origin_prefix": "Origin",
-    "labels": {
-      "format": "Format",
-      "finish": "Finish",
-      "origin": "Origin",
-      "use": "Application"
+    "a11y": {
+      "prev_render": "Previous render",
+      "next_render": "Next render",
+      "go_to_render": "Go to render",
+      "no_visual": "No visual record"
     },
     "terms": {
       "Mármol": "Marble",
@@ -451,40 +531,44 @@
   },
   "projects": {
     "badge": "PROJECTS & WORKS",
-    "title": "ARCHITECTURE & HOSPITALITY",
+    "title": "Projects already telling their story in stone",
     "view_all": "View all projects",
     "explore": "Explore Details",
-    "no_photo": "MAYA STONE"
+    "no_photo": "MAYA STONE",
+    "prev_project": "Previous project",
+    "next_project": "Next project"
+  },
+  "project_detail": {
+    "back_button": "Back to Architecture",
+    "cta_eyebrow": "MATERIALS IN THIS PROJECT",
+    "cta_title": "Want this material in your project?",
+    "cta_button": "QUOTE THIS MATERIAL",
+    "materials_title": "Natural Matter Applied",
+    "materials_count": "Selections",
+    "memory_title": "Intervention Record",
+    "gallery_title": "Project Gallery Record",
+    "gallery_views": "Views",
+    "no_visual_record": "No Visual Record"
   },
   "bespoke": {
     "meta": "TAILOR-MADE SERVICES",
-    "title": "BESPOKE FINISHES & CRAFT",
-    "description": "We develop high-precision solutions for architectural visions that demand complex layouts, tactile textures and unique distinction.",
-    "cta_consultation": "Request Bespoke Advice",
-    "badge_atelier": "ATELIER PROCESS",
-    "applications_label": "APPLICATIONS",
-    "banner_title": "Do you have a special architectural project in development?",
-    "empty_state": "Bespoke processes updating.",
-    "image_alt": "Bespoke material sourcing",
-    "image_headline": "Tailored stone slabs and engineered hardwood for uncompromising architecture.",
-    "pillar_tag": "SOURCING",
-    "consultation_label": "PRIVATE CONSULTATION",
+    "title": "MADE-TO-MEASURE PIECES & FORMATS",
+    "description": "When your project calls for a thickness, a layout or a veining that isn't in the catalogue, we find it and validate it with you.",
+    "cta_quote": "Quote a made-to-measure piece",
+    "consultation_label": "PRIVATE SPECIFICATION",
     "consultation_question": "Have a specific stone, tone or timber spec in mind?",
     "pillars": [
       {
-        "num": "01",
-        "title": "Global Quarry & Mill Direct",
-        "desc": "Direct connection with primary quarries and European mills without third-party intermediaries."
+        "title": "Selection at the source",
+        "desc": "We work with quarries in Mexico and around the world to find the block your project needs."
       },
       {
-        "num": "02",
         "title": "Custom Specs & Formats",
         "desc": "Custom slab thicknesses, bookmatch selections, special plank widths, and architectural grades."
       },
       {
-        "num": "03",
         "title": "Technical Feasibility",
-        "desc": "Comprehensive physical testing, batch matching, and tailored supply timelines for high-end residential & hospitality."
+        "desc": "Physical lot review, sampling and a clear import schedule from the start."
       }
     ]
   },
@@ -500,20 +584,23 @@
     "close": "Close ✕",
     "empty_caption": "Official Instagram post.",
     "post_alt": "MAYA Instagram Post",
-    "cta_tag": "[ Community & Architecture ]",
-    "cta_title": "Explore the complete archive of textures and projects.",
     "load_more": "See more on Instagram",
     "prev_slide": "Previous image",
     "next_slide": "Next image",
     "posts_label": "posts",
-    "followers_label": "followers"
+    "followers_label": "followers",
+    "official_label": "Instagram Official"
   },
   "final_cta": {
-    "title": "We transform raw stone into living architecture",
-    "description": "Begin a creative dialogue with our team of specialists. We guide you in finding the ideal surfaces for your project.",
-    "cta_primary": "Consult some material",
-    "cta_secondary": "Request Material Samples",
-    "availability": "Specialized service for high-end residential and commercial projects"
+    "title": "Your next project deserves a stone with a story.",
+    "description": "Request a quote or check availability with our team. We help you choose with certainty and avoid surprises on site.",
+    "cta_primary": "REQUEST A QUOTE",
+    "cta_secondary": "Request samples",
+    "availability": "Specialized service for high-end residential and commercial projects",
+    "locations": "LEÓN · CDMX · CANCÚN",
+    "alt_travertine": "Geological travertine",
+    "alt_wood": "Living matter",
+    "alt_samples": "Mineral sediment"
   },
   "about": {
     "hero": {
@@ -540,7 +627,7 @@
       "subtitle": "Spaces, texture and material selection"
     },
     "pilares": {
-      "label": "Methodology",
+      "label": "Our pillars",
       "items": [
         {
           "title": "Raw curation",
@@ -557,43 +644,93 @@
         {
           "title": "Material honesty",
           "desc": "A deep respect for the nature of the stone, avoiding alterations that hide its original essence."
+        },
+        {
+          "title": "Sensitive innovation",
+          "desc": "Digital tools that bring the physical reality of stone into the architect's process: data sheets, catalogue and renders."
         }
       ]
     },
     "cta": {
       "label": "Material catalogue",
       "title": "Discover the textures that define spaces with character.",
-      "button": "Explore the collection"
+      "button": "Explore the collection",
+      "button_secondary": "Request a quote"
     }
   },
   "collection_page": {
     "meta": "Editorial Catalogue 2026",
     "title": "Our Collection",
-    "subtitle": "A curated selection of marbles, quartzites, granites, and travertines sourced from the world's most extraordinary quarries for high-specification architecture.",
+    "subtitle": "Marbles, quartzites, granites, travertines and fine hardwoods, chosen one by one for their behaviour, their veining and their visual honesty.",
     "dock_label": "Collection",
     "chapter_prefix": "COLLECTION",
-    "curatorial_note_label": "CURATORIAL NOTE",
-    "views_available": "AVAILABLE VIEWS:",
-    "view_natural_slab": "Natural Slab",
-    "view_sample": "Sample",
-    "view_render_default": "Application Render",
-    "materials_catalogue_title": "MATERIALS CATALOGUE",
-    "materials_catalogue_hint": "SELECT TO INSPECT PHOTO",
-    "moodboard_title": "VISUAL ARCHIVE & MOODBOARD",
     "no_photo": "No Photo",
+    "catalog_popup": {
+      "title": "MAYA catalogues",
+      "description": "Get our collection catalogues and news on new material arrivals.",
+      "email_label": "Email address",
+      "email_placeholder": "you@email.com",
+      "consent": "I agree to receive emails from MAYA. I can unsubscribe at any time.",
+      "privacy_link": "Privacy Policy",
+      "submit": "Send",
+      "submitting": "…",
+      "or": "or",
+      "whatsapp": "Get them on WhatsApp",
+      "whatsapp_message": "Hello MAYA, I'd like to receive your material catalogues.",
+      "success_title": "Thank you",
+      "success_description": "You're on our list. Download the catalogues here:",
+      "close": "Close",
+      "errors": {
+        "email": "Please enter a valid email.",
+        "consent": "Please tick the box so we can email you.",
+        "rate": "Too many attempts. Please try again shortly.",
+        "generic": "We couldn't sign you up. Please try again."
+      }
+    },
+    "catalog_download": {
+      "label": "Digital Catalogue",
+      "cover_caption": "Digital Catalogue",
+      "title": "Take the collection with you",
+      "description": "Download the full catalogue with photography, specifications and data sheets for every material.",
+      "button": "Download catalogue",
+      "meta": "PDF",
+      "note": "PDF format · Direct download",
+      "unavailable_note": "Available soon"
+    },
     "spec_diagram": {
-      "spec_label": "SPECIFICATION",
-      "material_label": "MATERIAL:",
-      "origin_label": "ORIGIN:",
-      "uses_label": "RECOMMENDED USES",
-      "uses_fallback": "Upon inquiry.",
-      "finishes_label": "FINISHES",
-      "finishes_fallback": "Upon request.",
-      "formats_label": "AVAILABLE FORMATS",
-      "formats_fallback": "Upon request",
+      "sheet_label": "Data sheet",
+      "prev_material": "Previous material",
+      "next_material": "Next material",
       "no_sample": "No Sample Registered",
       "tech_desc_label": "TECHNICAL DESCRIPTION",
-      "default_desc": "Raw material selected for high-specification architecture."
+      "default_desc": "Natural material selected by MAYA. Check availability, formats and finishes with our team.",
+      "expand": "Expand slab",
+      "collapse": "Collapse slab",
+      "finishes_short": "Finishes",
+      "finishes_label": "Available finishes",
+      "formats_label": "Formats",
+      "format_labels": {
+        "Placa": "Slab",
+        "Mosaico": "Mosaic",
+        "Versailles": "Versailles",
+        "Brick": "Brick",
+        "Customizable": "Custom size"
+      },
+      "finish_labels": {
+        "Natural Cut": "Natural Cut",
+        "Sandblasted": "Sandblasted",
+        "Spazzolato": "Spazzolato",
+        "Bamboo": "Bamboo",
+        "Brushed": "Brushed",
+        "Honed": "Honed",
+        "Polished": "Polished",
+        "Bush-hammered": "Bush-hammered",
+        "Tumbled": "Tumbled",
+        "Leather": "Leather",
+        "Bookmatched": "Bookmatched",
+        "Sandblasted & brushed": "Sandblasted & brushed",
+        "Sandblasted + brushed": "Sandblasted & brushed"
+      }
     },
     "terms": {
       "Mármol": "Marble",
@@ -682,15 +819,20 @@
     "cta": {
       "label": "ARCHITECTURAL SELECTION",
       "title": "LOOKING FOR A CUSTOM BLOCK OR SELECTION?",
-      "description": "We work directly with architects and interior designers to select unique slabs.",
-      "button": "Consult with an Advisor"
-    }
+      "description": "We help you choose the exact slab for your project, at our showroom or with samples.",
+      "button": "Request a quote"
+    },
+    "hero_image_alt": "MAYA Collection",
+    "prev_photo": "Previous photo",
+    "next_photo": "Next photo",
+    "back_to_all": "Back to all collections",
+    "availability_cta": "Check availability"
   },
   "architecture": {
     "hero": {
       "badge": "PROJECTS & TECHNICAL SPECIFICATION",
       "title": "FROM ARCHITECTURAL INTENT TO MATERIAL",
-      "subtitle": "MAYA connects materials of exceptional origin with architectural and interior design projects. We support architects and developers with specialized selection, aesthetic criteria, and technical backing."
+      "subtitle": "MAYA connects natural materials with architecture and interior design projects. We support architects and developers with specialized selection, aesthetic criteria, and technical backing."
     },
     "filter_dock_label": "Typology",
     "categories": {
@@ -708,21 +850,20 @@
       "statement_title": "Architectural Statement",
       "materials_title": "Applied Materials",
       "gallery_title": "Visual Work Record",
-      "no_photo": "MAYA STONE IMPORTS",
-      "default_location": "MEXICO"
+      "no_photo": "MAYA STONE IMPORTS"
     }
   },
   "contact": {
-    "meta": "INQUIRIES & PRIVATE SHOWROOM",
+    "meta": "SERVICE & SHOWROOM",
     "title": "CONTACT",
-    "subtitle": "Schedule a private visit to our showroom or request specialized technical consultation for your project.",
+    "subtitle": "Request a quote, check a material's availability or book a visit to our showroom.",
     "form": {
       "reason_label": "Reason for Inquiry *",
       "reason_options": {
-        "showroom": "Schedule Showroom Visit",
-        "quote": "Material Quote or Inquiry",
-        "consulting": "Project Consulting & Specification",
-        "other": "Other Matter"
+        "showroom": "Book a visit",
+        "samples": "Request samples",
+        "quote": "Request a quote",
+        "other": "Other"
       },
       "name_label": "Full Name *",
       "name_placeholder": "Enter your full name",
@@ -731,13 +872,21 @@
       "phone_label": "Phone / WhatsApp *",
       "phone_placeholder": "+52 000 000 0000",
       "company_label": "Company / Studio",
-      "company_placeholder": "Studio or firm name",
-      "profile_label": "Profile *",
+      "company_placeholder": "Your studio or company name",
+      "location_label": "Project Location *",
+      "location_placeholder": "City and state, e.g. León, Guanajuato",
+      "project_label": "Project Name",
+      "project_placeholder": "E.g. Lomas Residence, Downtown Hotel",
+      "profile_label": "What describes you best? *",
+      "profile_placeholder": "Select an option",
       "profile_options": {
-        "architect": "Architect / Interior Designer",
-        "developer": "Developer / Construction Firm",
-        "private": "Private Client / Residential",
-        "other": "Other"
+        "arquitecto": "Architect",
+        "interiorista": "Interior designer",
+        "desarrollador": "Developer",
+        "marmolero": "Stone fabricator",
+        "cliente_final": "Private client",
+        "comercializadora": "Distributor",
+        "otro": "Other"
       },
       "date_label": "Preferred Date",
       "time_label": "Preferred Time",
@@ -745,22 +894,25 @@
         "morning": "Morning (9:00 - 13:00)",
         "afternoon": "Afternoon (13:00 - 17:00)"
       },
-      "category_label": "Category of Interest",
+      "category_label": "Line of interest",
       "category_options": {
-        "all": "Full Catalogue",
-        "stone": "Natural Stones (Marble, Quartzite, etc.)",
-        "wood": "Noble Hardwoods / Engineered Wood",
-        "bespoke": "Bespoke / Custom Cut-to-Size"
+        "placeholder": "Select an option",
+        "wood": "Rivas Wood",
+        "bespoke": "Bespoke / Made-to-measure services",
+        "other": "Other"
       },
       "details_label": "Project Details or Message",
       "details_placeholder_showroom": "Mention if you wish to inspect specific slabs/samples or party size...",
       "details_placeholder_quote": "Tell us about estimated m², delivery location, finishes or architectural requirements...",
-      "submit_showroom": "Request Private Appointment",
-      "submit_general": "Send Inquiry",
+      "catalog_request_message": "Hello, I would like to receive the digital catalogue for the {collection} collection.",
+      "material_request_message": "Hello, I would like to check availability and get a quote for the material {material}.",
+      "project_request_message": "Hello, I'm interested in a quote for the materials used in the project {project}.",
+      "submit": "Send",
       "submitting": "Sending Request...",
       "privacy_notice_prefix": "By submitting this form you agree to our ",
       "privacy_notice_link": "Privacy Policy",
       "terms_notice_link": "Terms and Conditions",
+      "terms_notice_connector": " and ",
       "privacy_notice_suffix": "."
     },
     "success": {
@@ -768,9 +920,22 @@
       "message": "Thank you for contacting MAYA. A specialized consultant will review your request and get in touch with you promptly."
     },
     "error_default": "An error occurred while submitting your request. Please try again.",
+    "errors": {
+      "rate_limit": "You have sent several requests in a row. Please try again in a few minutes.",
+      "required": "Please complete the required fields.",
+      "invalid_email": "The email address is not valid.",
+      "invalid_date": "The selected date is not valid.",
+      "server_config": "Server configuration error.",
+      "generic": "An error occurred while sending your request. Please try again."
+    },
     "cards": {
-      "phone_title": "Direct Call & WhatsApp",
-      "phone_value": "+52 (477) 854 4033",
+      "whatsapp_title": "WhatsApp Business",
+      "whatsapp_text": "Prefer to message us directly? We reply on WhatsApp during showroom hours.",
+      "whatsapp_button": "Message us on WhatsApp",
+      "whatsapp_number": "524777040874",
+      "whatsapp_message": "Hello MAYA, I'd like a quote for a material.",
+      "phone_title": "Calls",
+      "phone_value": "+52 (477) 704 0874",
       "hours_title": "Showroom Hours",
       "hours_value": "Monday to Friday: 9:00 - 17:00",
       "email_title": "Direct Concierge",
@@ -782,6 +947,7 @@
       "hours_label": "Business Hours",
       "contact_label": "Direct Contact",
       "maps_button": "Open in Google Maps"
-    }
+    },
+    "showroom_image_alt": "MAYA Showroom"
   }
 }
