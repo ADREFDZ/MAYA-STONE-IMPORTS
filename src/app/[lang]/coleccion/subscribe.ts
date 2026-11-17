@@ -41,9 +41,15 @@ export async function subscribeCatalogAction(
     return typeof v === "string" ? v.trim().slice(0, max) : "";
   };
 
-  // Bots: se responde "ok" sin guardar
-  const startedAt = Number(formData.get("started_at") || 0);
-  if (str("website", 200) || !startedAt || Date.now() - startedAt < 2000) {
+  // Bots: se responde "ok" sin guardar.
+  // El tiempo se mide en el navegador (elapsed_ms) para no depender de que el
+  // reloj de la computadora del visitante coincida con el del servidor.
+  const elapsed = Number(formData.get("elapsed_ms") || 0);
+  if (str("maya_hp", 200) || !(elapsed >= 2000)) {
+    console.warn("[newsletter] Envío descartado como bot", {
+      honeypot: Boolean(str("maya_hp", 200)),
+      elapsed,
+    });
     return { ok: true };
   }
 

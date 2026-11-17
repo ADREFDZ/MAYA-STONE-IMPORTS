@@ -207,7 +207,7 @@ export default function CatalogPopup({
     setError(null);
     setSending(true);
     const fd = new FormData(e.currentTarget);
-    fd.set("started_at", String(openedAt.current));
+    fd.set("elapsed_ms", String(Date.now() - openedAt.current));
     fd.set("lang", lang);
     if (currentCollection) fd.set("collection", currentCollection);
     let res: Awaited<ReturnType<typeof subscribeCatalogAction>>;
@@ -269,7 +269,7 @@ export default function CatalogPopup({
             </div>
 
             <form onSubmit={onSubmit} className="space-y-2.5" noValidate>
-              <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+              <input type="text" name="maya_hp" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
               <label htmlFor="catalog-popup-email" className="sr-only">
                 {dict.email_label}
               </label>

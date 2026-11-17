@@ -197,7 +197,7 @@ export default function ContactClient({
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    formData.set("form_started_at", String(formStartedAt.current));
+    formData.set("form_elapsed_ms", String(Date.now() - formStartedAt.current));
     formData.set("lang", currentLocale);
     const res = await submitContactAction(formData);
 
@@ -260,7 +260,7 @@ export default function ContactClient({
                 {/* Anti-spam (honeypot): invisible para personas, los bots lo llenan */}
                 <input
                   type="text"
-                  name="website"
+                  name="maya_hp"
                   tabIndex={-1}
                   autoComplete="off"
                   aria-hidden="true"

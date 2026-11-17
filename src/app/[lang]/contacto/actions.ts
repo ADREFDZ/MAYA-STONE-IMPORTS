@@ -8,7 +8,7 @@ import { CRM_CLIENT_TYPES, syncLeadToCrm } from "@/lib/crm/webLeads";
 // =============================================================================
 // PROTECCIÓN ANTI-SPAM
 // -----------------------------------------------------------------------------
-// 1. Honeypot: campo oculto "website" que un humano nunca llena.
+// 1. Honeypot: campo oculto "maya_hp" que un humano nunca llena.
 // 2. Trampa de tiempo: un humano tarda más de 3 s en llenar el formulario.
 // 3. Límite por IP: máx. 5 envíos cada 10 min (en memoria; por instancia).
 //    Para algo más robusto en producción: Cloudflare Turnstile o Upstash.
@@ -67,10 +67,16 @@ export async function submitContactAction(formData: FormData) {
 
   // --- 1 y 2: honeypot y tiempo de llenado. A un bot le respondemos "éxito"
   // para no darle pistas, pero no se guarda nada.
-  const honeypot = field(formData, "website", 200);
-  const startedAt = Number(formData.get("form_started_at") || 0);
-  const tooFast = !startedAt || Date.now() - startedAt < MIN_FILL_MS;
+  // El tiempo se mide en el navegador (form_elapsed_ms) para no depender del
+  // reloj de la computadora del visitante.
+  const honeypot = field(formData, "maya_hp", 200);
+  const elapsed = Number(formData.get("form_elapsed_ms") || 0);
+  const tooFast = !(elapsed >= MIN_FILL_MS);
   if (honeypot || tooFast) {
+    console.warn("[contacto] Envío descartado como bot", {
+      honeypot: Boolean(honeypot),
+      elapsed,
+    });
     return { success: true };
   }
 
