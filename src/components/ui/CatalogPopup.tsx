@@ -210,8 +210,16 @@ export default function CatalogPopup({
     fd.set("started_at", String(openedAt.current));
     fd.set("lang", lang);
     if (currentCollection) fd.set("collection", currentCollection);
-    const res = await subscribeCatalogAction(fd);
-    setSending(false);
+    let res: Awaited<ReturnType<typeof subscribeCatalogAction>>;
+    try {
+      res = await subscribeCatalogAction(fd);
+    } catch (err) {
+      // Falla de red o versión del sitio desactualizada (tras una publicación nueva)
+      console.error("[catalog-popup] Error al enviar:", err);
+      res = { ok: false, error: "generic" };
+    } finally {
+      setSending(false);
+    }
     if (res.ok) {
       track("newsletter_signup", { collection: currentCollection || "" });
       snooze(SNOOZE_SUBSCRIBED_DAYS);
