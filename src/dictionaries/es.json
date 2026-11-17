@@ -1,4 +1,10 @@
 {
+  "project_materials": {
+    "title": "Materiales usados en este proyecto",
+    "view": "Ver material",
+    "count_one": "material",
+    "count_other": "materiales"
+  },
   "seo": {
     "site": {
       "title": "MAYA | Naturaleza Redefinida como Objeto de Diseño",

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getProjectBySlug } from "@/lib/data/public";
+import ProjectMaterials from "@/components/pages/Arquitectura/ProjectMaterials";
+import type { ProjectMaterial } from "@/lib/projects/materials";
 import { ROUTES } from "@/lib/i18n/routes";
 import { getI18n } from "@/lib/i18n/utils";
 import ProjectJsonLd from "@/components/seo/ProjectJsonLd";
@@ -95,15 +97,9 @@ export default async function ProjectDetailPage({ params }: Props) {
       ? project.gallery_images
       : [];
 
-  const rawMaterials = Array.isArray(project.materials)
-    ? project.materials
-    : Array.isArray(project.material_skus)
-      ? project.material_skus
-      : [];
-
-  const materialsList: string[] = rawMaterials.map((m: any) =>
-    getI18n(m, lang),
-  );
+  // Materiales MAYA elegidos en Admin (resueltos: nombre, foto, colección)
+  const materials: ProjectMaterial[] = project.materials_resolved ?? [];
+  const materialsList: string[] = materials.map((m) => m.name);
 
   return (
     <main className="min-h-screen bg-background text-black-neutral selection:bg-accent selection:text-white font-sans overflow-x-clip">
@@ -194,27 +190,13 @@ export default async function ProjectDetailPage({ params }: Props) {
             )}
           </div>
 
-          {materialsList.length > 0 && (
-            <div className="p-6 bg-surface rounded-2xs border border-border-light space-y-3.5 shadow-2xs">
-              <div className="flex items-center justify-between border-b border-border-light pb-2 font-mono text-maya-label uppercase tracking-data">
-                <span className="text-accent-ink font-semibold">
-                  {t.materials_title}
-                </span>
-                <span className="text-black-neutral/40">
-                  {materialsList.length} {t.materials_count}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-1">
-                {materialsList.map((mat: string, idx: number) => (
-                  <span
-                    key={idx}
-                    className="font-mono text-maya-label uppercase tracking-data text-black-neutral bg-background border border-border-light px-3 py-1.5 rounded-3xs shadow-2xs"
-                  >
-                    {mat}
-                  </span>
-                ))}
-              </div>
+          {materials.length > 0 && (
+            <div className="p-5 bg-surface border border-border-light shadow-2xs">
+              <ProjectMaterials
+                materials={materials}
+                lang={lang}
+                dict={dict.project_materials}
+              />
             </div>
           )}
 

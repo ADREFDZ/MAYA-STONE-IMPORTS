@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import AdminLayout from "@/components/admin/AdminLayout";
 import ProjectsManagerClient from "./ProjectsManagerClient";
 import { ProjectFormData } from "./actions";
+import type { MaterialOption } from "@/components/admin/MaterialPicker";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,26 @@ export default async function AdminProjectsPage({ params }: Props) {
     .order("sort_order", { ascending: true });
 
   if (error) console.error("Error al cargar proyectos:", error.message);
+
+  // Materiales del inventario para el selector "Materiales usados"
+  const { data: productRows } = await supabase
+    .from("products")
+    .select(
+      "sku, aka, product_name, image_url, stone_type, origin, status, collection_products(collections(slug, title_es))",
+    )
+    .order("aka", { ascending: true });
+  const materialOptions: MaterialOption[] = (productRows || []).map((p: any) => ({
+    sku: p.sku,
+    name: p.aka || p.product_name || p.sku,
+    image: p.image_url || null,
+    stone_type: p.stone_type || null,
+    origin: p.origin && p.origin !== "-" ? p.origin : null,
+    active: p.status === "active",
+    collections: (p.collection_products || [])
+      .map((cp: any) => cp?.collections)
+      .filter(Boolean)
+      .map((c: any) => ({ slug: c.slug, title: c.title_es || c.slug })),
+  }));
 
   const formattedProjects: ProjectFormData[] = (projects || []).map(
     (p: any) => {
@@ -69,7 +90,10 @@ export default async function AdminProjectsPage({ params }: Props) {
           </p>
         </div>
 
-        <ProjectsManagerClient initialProjects={formattedProjects} />
+        <ProjectsManagerClient
+          initialProjects={formattedProjects}
+          materialOptions={materialOptions}
+        />
       </div>
     </AdminLayout>
   );

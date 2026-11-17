@@ -1,4 +1,10 @@
 {
+  "project_materials": {
+    "title": "Materials used in this project",
+    "view": "View material",
+    "count_one": "material",
+    "count_other": "materials"
+  },
   "seo": {
     "site": {
       "title": "MAYA | Nature Redefined as a Design Object",

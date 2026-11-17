@@ -24,11 +24,11 @@ interface CollectionHeroProps {
 }
 
 const DEFAULT_BACKGROUND_IMAGES = [
-  "/images/ColeccionesCarrusel1.png",
-  "/images/ColeccionesCarrusel2.png",
-  "/images/ColeccionesCarrusel3.png",
-  "/images/ColeccionesCarrusel4.png",
-  "/images/ColeccionesCarrusel5.png",
+  "/images/ColeccionesCarrusel1.webp",
+  "/images/ColeccionesCarrusel2.webp",
+  "/images/ColeccionesCarrusel3.webp",
+  "/images/ColeccionesCarrusel4.webp",
+  "/images/ColeccionesCarrusel5.webp",
 ];
 
 const CYCLE_MS = 6500;

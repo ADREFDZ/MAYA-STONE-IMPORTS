@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { unstable_cache, updateTag } from "next/cache";
+import type { ProjectMaterial } from "@/lib/projects/materials";
 
 /**
  * DATOS PÚBLICOS CACHEADOS
@@ -111,7 +112,8 @@ const getHomeDataCached = cached(async () => {
       .eq("is_active", true)
       .eq("show_in_home", true)
       .order("sort_order", { ascending: true })
-      .limit(4),
+      // Todos los marcados para la Home (tope de seguridad: 12)
+      .limit(12),
   ]);
 
   assertOk(finishesRes, featuredRes, bentoRes, projectsRes);
@@ -222,6 +224,65 @@ export const getCatalogLinks = () =>
 
 // =============================================================================
 // ARQUITECTURA / PROYECTOS
+// -----------------------------------------------------------------------------
+// `material_skus` guarda los SKUs elegidos en Admin → Proyectos → Materiales.
+// Aquí se convierten en materiales con nombre, foto y colección
+// (`materials_resolved`), solo los que existen y están activos.
+// =============================================================================
+
+type SupabasePublic = ReturnType<typeof createPublicClient>;
+
+async function attachMaterials<T extends { material_skus?: unknown }>(
+  supabase: SupabasePublic,
+  projects: T[],
+): Promise<(T & { materials_resolved: ProjectMaterial[] })[]> {
+  const skus = [
+    ...new Set(
+      projects.flatMap((p) =>
+        Array.isArray(p.material_skus)
+          ? (p.material_skus as unknown[]).filter((s): s is string => typeof s === "string")
+          : [],
+      ),
+    ),
+  ];
+  const bySku = new Map<string, ProjectMaterial>();
+  if (skus.length > 0) {
+    const { data, error } = await supabase
+      .from("products")
+      .select(
+        "sku, aka, product_name, image_url, stone_type, origin, status, collection_products(collections(slug, title_es, title_en, is_active))",
+      )
+      .in("sku", skus)
+      .eq("status", "active");
+    if (error) throw new Error(error.message);
+    for (const p of data ?? []) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cols = ((p as any).collection_products ?? [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((cp: any) => cp?.collections)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((c: any) => c && c.is_active);
+      bySku.set(p.sku, {
+        sku: p.sku,
+        name: p.aka || p.product_name || p.sku,
+        image: p.image_url || null,
+        stone_type: p.stone_type || null,
+        origin: p.origin && p.origin !== "-" ? p.origin : null,
+        collection: cols[0]
+          ? { slug: cols[0].slug, title_es: cols[0].title_es, title_en: cols[0].title_en }
+          : null,
+      });
+    }
+  }
+  return projects.map((p) => ({
+    ...p,
+    materials_resolved: (Array.isArray(p.material_skus) ? (p.material_skus as string[]) : [])
+      .map((s) => bySku.get(s))
+      .filter((m): m is ProjectMaterial => Boolean(m)),
+  }));
+}
+
+// =============================================================================
 // =============================================================================
 
 const getActiveProjectsCached = cached(async () => {
@@ -232,7 +293,7 @@ const getActiveProjectsCached = cached(async () => {
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
   if (error) throw new Error(error.message);
-  return data ?? [];
+  return attachMaterials(supabase, data ?? []);
 }, "projects-active");
 
 export const getActiveProjects = () =>
@@ -247,7 +308,9 @@ const getProjectBySlugCached = cached(async (slug: string) => {
     .eq("is_active", true)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data;
+  if (!data) return null;
+  const [withMaterials] = await attachMaterials(supabase, [data]);
+  return withMaterials;
 }, "project-by-slug");
 
 export const getProjectBySlug = (slug: string) =>

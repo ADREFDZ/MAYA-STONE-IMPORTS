@@ -4,6 +4,7 @@ import { cleanImageUrl } from "@/lib/utils/strings";
 import Image from "next/image";
 import { useEffect } from "react";
 import { ProjectItem } from "./ProjectEditorialSpread";
+import ProjectMaterials, { type ProjectMaterialsDict } from "./ProjectMaterials";
 import { getI18n } from "@/lib/i18n/utils";
 import { lockScroll } from "@/lib/utils/scrollLock";
 
@@ -19,6 +20,7 @@ interface ProjectGalleryModalProps {
     no_photo: string;
   };
   categoriesDict: Record<string, string>;
+  materialsDict?: ProjectMaterialsDict;
 }
 
 
@@ -28,6 +30,7 @@ export default function ProjectGalleryModal({
   onClose,
   dict,
   categoriesDict,
+  materialsDict,
 }: ProjectGalleryModalProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -124,21 +127,14 @@ export default function ProjectGalleryModal({
               </p>
             </div>
 
-            {project.material_skus && project.material_skus.length > 0 && (
-              <div className="border-t border-gray-warm/15 pt-3.5 space-y-2">
-                <span className="block font-mono text-maya-label uppercase tracking-data text-gray-warm/40 font-medium">
-                  {materialsTitle}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {project.material_skus.map((sku, idx) => (
-                    <span
-                      key={idx}
-                      className="font-mono text-maya-label uppercase tracking-data text-gray-warm bg-black-pure/60 border border-gray-warm/20 px-2.5 py-1 rounded-3xs"
-                    >
-                      {getI18n(sku, lang)}
-                    </span>
-                  ))}
-                </div>
+            {(project.materials_resolved?.length ?? 0) > 0 && (
+              <div className="border-t border-gray-warm/15 pt-3.5">
+                <ProjectMaterials
+                  materials={project.materials_resolved}
+                  lang={lang}
+                  dict={materialsDict}
+                  tone="dark"
+                />
               </div>
             )}
           </div>

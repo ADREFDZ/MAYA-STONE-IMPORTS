@@ -1,5 +1,7 @@
 "use client";
 
+import ProjectMaterials, { type ProjectMaterialsDict } from "./ProjectMaterials";
+import type { ProjectMaterial } from "@/lib/projects/materials";
 import { cleanImageUrl } from "@/lib/utils/strings";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
@@ -22,6 +24,7 @@ export interface ProjectItem {
   cover_image?: string;
   gallery_images?: string[];
   material_skus?: any[];
+  materials_resolved?: ProjectMaterial[];
 }
 
 interface ProjectEditorialSpreadProps {
@@ -32,6 +35,7 @@ interface ProjectEditorialSpreadProps {
   materialLabel: string;
   categoriesDict: Record<string, string>;
   onOpenDossier: (proj: ProjectItem) => void;
+  materialsDict?: ProjectMaterialsDict;
 }
 
 
@@ -43,6 +47,7 @@ export default function ProjectEditorialSpread({
   materialLabel,
   categoriesDict,
   onOpenDossier,
+  materialsDict,
 }: ProjectEditorialSpreadProps) {
   const isEven = index % 2 === 1;
 
@@ -123,17 +128,16 @@ export default function ProjectEditorialSpread({
                 </p>
               )}
 
-              {project.material_skus && project.material_skus.length > 0 && (
-                <div className="border-t border-border-light pt-3 space-y-1">
-                  <span className="block font-mono text-maya-label uppercase tracking-data text-black-neutral/40 font-medium">
-                    {materialLabel}
-                  </span>
-                  <p className="font-sans text-maya-small uppercase tracking-wide text-black-neutral font-medium leading-snug">
-                    {project.material_skus
-                      .map((sku: any) => getI18n(sku, lang))
-                      .join(" · ")}
-                  </p>
-                </div>
+              {/* Materiales MAYA usados (solo si se eligieron en Admin) */}
+              {(project.materials_resolved?.length ?? 0) > 0 && (
+              <div className="border-t border-border-light pt-3">
+                <ProjectMaterials
+                  materials={project.materials_resolved}
+                  lang={lang}
+                  dict={materialsDict}
+                  compact
+                />
+              </div>
               )}
             </div>
 

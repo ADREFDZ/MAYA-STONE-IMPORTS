@@ -50,7 +50,7 @@ export default async function ArchitecturePage({ params }: Props) {
     <ArchitectureClient
       projects={projects || []}
       lang={lang}
-      dict={dict.architecture}
+      dict={{ ...dict.architecture, project_materials: dict.project_materials }}
     />
   );
 }

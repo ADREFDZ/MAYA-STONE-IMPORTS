@@ -194,7 +194,7 @@ export default function BespokeModal({
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file.type.startsWith("image/")) {
-          const optimizedFile = await convertToWebP(file, { maxBytes: 12 * 1024 * 1024 });
+          const optimizedFile = await convertToWebP(file);
           const fileName = `gallery-${Date.now()}-${Math.random().toString(36).substring(2, 6)}.webp`;
           const filePath = `bespoke/${cleanSlug}/gallery/${fileName}`;
 

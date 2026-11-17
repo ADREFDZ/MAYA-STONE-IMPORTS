@@ -17,15 +17,17 @@ export function isVideoUrl(url?: string | null): boolean {
    dispositivo). Por eso aquí NO buscamos un archivo ligero, sino un "master"
    de alta calidad que sirva para pantallas 4K:
 
-   · Lado largo máximo 4096 px (≈ 16 MP como máximo: límite seguro del canvas
-     en iPhone/iPad; más grande, Safari genera imágenes en blanco).
-   · WebP calidad 0.95 (prácticamente sin pérdida visible en vetas/texturas).
+   · Lado largo máximo 3000 px: nítido en pantallas retina al tamaño en que
+     el sitio muestra las fotos (máx. ~1900 px de ancho) y ligero para que
+     el optimizador de imágenes no tarde (fotos de 4 MB llegaban a fallar
+     con "upstream image response timed out").
+   · WebP calidad 0.90 y máx. 2 MB (sin pérdida visible en vetas/texturas).
    · Si la foto ya es pequeña y es JPEG/WebP, se sube sin recomprimir.
    · Safari antiguo no sabe generar WebP: en ese caso se usa JPEG 0.95.
    ========================================================================== */
 
-export const IMAGE_MASTER_MAX_SIDE = 4096;
-export const IMAGE_MASTER_QUALITY = 0.95;
+export const IMAGE_MASTER_MAX_SIDE = 3000;
+export const IMAGE_MASTER_QUALITY = 0.9;
 /** Cabecera de caché para subidas con nombre único (1 año, inmutable). */
 export const STORAGE_CACHE_SECONDS = "31536000";
 
@@ -49,7 +51,7 @@ export async function convertToWebP(
   {
     maxSide = IMAGE_MASTER_MAX_SIDE,
     quality = IMAGE_MASTER_QUALITY,
-    maxBytes = 4 * 1024 * 1024,
+    maxBytes = 2 * 1024 * 1024,
   }: ImageMasterOptions = {},
 ): Promise<File> {
   const url = URL.createObjectURL(file);
@@ -104,9 +106,9 @@ export async function convertToWebP(
     for (let i = 1; i < ladder.length && blob.size > maxBytes; i++) {
       blob = await encode(ladder[i]);
     }
-    // Último recurso: reducir resolución (nunca por debajo de 2560 px)
-    while (blob.size > maxBytes && side > 2560) {
-      side = Math.max(2560, Math.round(side * 0.85));
+    // Último recurso: reducir resolución (nunca por debajo de 2400 px)
+    while (blob.size > maxBytes && side > 2400) {
+      side = Math.max(2400, Math.round(side * 0.85));
       draw();
       blob = await encode(0.88);
     }

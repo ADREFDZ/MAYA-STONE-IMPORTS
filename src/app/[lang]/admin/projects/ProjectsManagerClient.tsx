@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProjectModal from "./ProjectModal";
+import type { MaterialOption } from "@/components/admin/MaterialPicker";
 import {
   deleteProjectAction,
   toggleProjectHomeAction,
@@ -11,8 +12,10 @@ import {
 
 export default function ProjectsManagerClient({
   initialProjects = [],
+  materialOptions = [],
 }: {
   initialProjects: ProjectFormData[];
+  materialOptions?: MaterialOption[];
 }) {
   const router = useRouter();
   const [projects, setProjects] = useState<ProjectFormData[]>(initialProjects);
@@ -173,6 +176,7 @@ export default function ProjectsManagerClient({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         initialData={selectedProject}
+        materialOptions={materialOptions}
       />
     </div>
   );

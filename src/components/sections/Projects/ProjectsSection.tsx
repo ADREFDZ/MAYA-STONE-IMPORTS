@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getI18n } from "@/lib/i18n/utils";
@@ -24,8 +24,9 @@ interface ProjectsSectionProps {
   };
 }
 
-// Curva de desaceleración sedosa y lenta
+// Curva de desaceleración suave (rápida para que se sienta inmediato)
 const EASE_SLOW = "cubic-bezier(0.22, 1, 0.36, 1)";
+const OPEN_MS = 600;
 
 export default function ProjectsSection({
   lang,
@@ -34,6 +35,21 @@ export default function ProjectsSection({
 }: ProjectsSectionProps) {
   const currentLocale: Locale = lang === "en" ? "en" : "es";
   const [activeIndex, setActiveIndex] = useState(0);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLElement | null)[]>([]);
+
+  // Con muchos proyectos la franja se desplaza: mantiene visible el elegido
+  useEffect(() => {
+    const strip = stripRef.current;
+    const el = itemRefs.current[activeIndex];
+    if (!strip || !el || strip.scrollWidth <= strip.clientWidth) return;
+    const t = window.setTimeout(() => {
+      const left = el.offsetLeft - strip.offsetLeft;
+      const target = Math.max(0, left - (strip.clientWidth - el.offsetWidth) / 2);
+      strip.scrollTo({ left: target, behavior: "smooth" });
+    }, OPEN_MS);
+    return () => window.clearTimeout(t);
+  }, [activeIndex]);
 
   if (!projects || projects.length === 0) return null;
 
@@ -102,8 +118,13 @@ export default function ProjectsSection({
 
         {/* ESCENARIO DE PLIEGOS EXPANDIBLES */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch min-h-[460px] lg:min-h-[520px]">
-          {/* FRISOS EXPANDIBLES (1100ms de apertura suave y gradual) */}
-          <div className="lg:col-span-8 flex gap-2.5 sm:gap-3.5 h-[380px] sm:h-[460px] lg:h-[520px] w-full overflow-hidden">
+          {/* FRISOS EXPANDIBLES */}
+          {/* Se adapta a cualquier número de proyectos: con muchos, las
+              franjas cerradas mantienen un ancho mínimo y se puede deslizar. */}
+          <div
+            ref={stripRef}
+            className="lg:col-span-8 flex gap-2 sm:gap-3 h-[380px] sm:h-[460px] lg:h-[520px] w-full overflow-x-auto overflow-y-hidden no-scrollbar overscroll-x-contain"
+          >
             {projects.map((proj, idx) => {
               const isSelected = activeIndex === idx;
               const imgSrc = cleanImageUrl(proj.cover_image);
@@ -113,15 +134,18 @@ export default function ProjectsSection({
               return (
                 <article
                   key={proj.id || idx}
+                  ref={(el) => {
+                    itemRefs.current[idx] = el;
+                  }}
                   onClick={() => setActiveIndex(idx)}
                   onMouseEnter={() => setActiveIndex(idx)}
                   style={{
-                    transition: `flex 1150ms ${EASE_SLOW}, border-color 600ms ease, box-shadow 1150ms ${EASE_SLOW}`,
+                    transition: `flex ${OPEN_MS}ms ${EASE_SLOW}, min-width ${OPEN_MS}ms ${EASE_SLOW}, border-color 300ms ease, box-shadow ${OPEN_MS}ms ${EASE_SLOW}`,
                   }}
                   className={`group relative rounded-2xs overflow-hidden border bg-black-neutral cursor-pointer select-none isolate transform-gpu will-change-transform ${
                     isSelected
-                      ? "flex-[3.5] border-accent/80 shadow-2xl"
-                      : "flex-[0.6] sm:flex-[0.7] border-border-light hover:border-black-neutral/40 hover:opacity-90"
+                      ? "flex-[3.5] min-w-[62%] sm:min-w-[52%] lg:min-w-[46%] border-accent/80 shadow-2xl"
+                      : "flex-[0.6] sm:flex-[0.7] min-w-[40px] sm:min-w-[52px] shrink-0 border-border-light hover:border-black-neutral/40 hover:opacity-90"
                   }`}
                 >
                   {/* FOTOGRAFÍA CON APERTURA Y FILTROS GRADUALES */}
@@ -133,7 +157,7 @@ export default function ProjectsSection({
                         fill
                         sizes="(max-width: 1024px) 100vw, 65vw"
                         style={{
-                          transition: `transform 1400ms ${EASE_SLOW}, filter 1100ms ease, scale 1400ms ${EASE_SLOW}`,
+                          transition: `transform 800ms ${EASE_SLOW}, filter 500ms ease, scale 800ms ${EASE_SLOW}`,
                         }}
                         className={`object-cover object-center transform-gpu will-change-transform ${
                           isSelected
@@ -147,7 +171,7 @@ export default function ProjectsSection({
                       </div>
                     )}
                     <div
-                      style={{ transition: `opacity 900ms ${EASE_SLOW}` }}
+                      style={{ transition: `opacity 400ms ${EASE_SLOW}` }}
                       className={`absolute inset-0 ${
                         isSelected
                           ? "bg-gradient-to-t from-black-pure/90 via-black-pure/30 to-transparent"
@@ -169,7 +193,7 @@ export default function ProjectsSection({
 
                   {/* ETIQUETA INFERIOR */}
                   <div
-                    style={{ transition: `all 850ms ${EASE_SLOW}` }}
+                    style={{ transition: `all 450ms ${EASE_SLOW}` }}
                     className={`absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 z-20 space-y-1 ${
                       isSelected
                         ? "opacity-100 translate-y-0"

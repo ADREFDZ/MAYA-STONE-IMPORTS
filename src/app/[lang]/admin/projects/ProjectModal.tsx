@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import FullscreenModal from "@/components/admin/FullscreenModal";
 import ImageUploadField from "@/components/admin/ImageUploadField";
-import TagInputList from "@/components/admin/TagInputList";
+import MaterialPicker, { type MaterialOption } from "@/components/admin/MaterialPicker";
 import { convertToWebP } from "@/lib/utils/media";
 import { autoTranslateAction } from "@/app/[lang]/admin/actions/translate";
 import {
@@ -18,9 +18,15 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   initialData?: ProjectFormData | null;
+  materialOptions?: MaterialOption[];
 }
 
-export default function ProjectModal({ isOpen, onClose, initialData }: Props) {
+export default function ProjectModal({
+  isOpen,
+  onClose,
+  initialData,
+  materialOptions = [],
+}: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
     "general" | "gallery" | "materials"
@@ -258,7 +264,7 @@ export default function ProjectModal({ isOpen, onClose, initialData }: Props) {
         },
         {
           id: "materials",
-          label: "3. Materiales Aplicados",
+          label: "3. Materiales usados",
           badgeCount: materialSkus.length,
         },
       ]}
@@ -515,12 +521,10 @@ export default function ProjectModal({ isOpen, onClose, initialData }: Props) {
       {/* TAB 3: MATERIALS */}
       {activeTab === "materials" && (
         <div className="space-y-6 font-sans">
-          <TagInputList
-            label="SKUs de Materiales MAYA Utilizados en este Proyecto"
-            placeholder="Ej. MAR-001, TRAVERTINO-ROMANO..."
-            items={materialSkus}
+          <MaterialPicker
+            options={materialOptions}
+            selected={materialSkus}
             onChange={setMaterialSkus}
-            badgeStyle="accent"
           />
         </div>
       )}

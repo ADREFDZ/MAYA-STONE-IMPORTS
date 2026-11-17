@@ -8,6 +8,7 @@ import ProjectEditorialSpread, {
   ProjectItem,
 } from "@/components/pages/Arquitectura/ProjectEditorialSpread";
 import ProjectGalleryModal from "@/components/pages/Arquitectura/ProjectGalleryModal";
+import type { ProjectMaterialsDict } from "@/components/pages/Arquitectura/ProjectMaterials";
 import { ROUTES } from "@/lib/i18n/routes";
 
 
@@ -32,6 +33,7 @@ interface ArchitectureClientProps {
       gallery_title: string;
       no_photo: string;
     };
+    project_materials?: ProjectMaterialsDict;
   };
 }
 
@@ -184,6 +186,7 @@ function ArchitectureContent({
               materialLabel={dict.material_label}
               categoriesDict={dict.categories}
               onOpenDossier={handleOpenDossier}
+              materialsDict={dict.project_materials}
             />
           ))
         )}
@@ -195,6 +198,7 @@ function ArchitectureContent({
         onClose={handleCloseModal}
         dict={dict.modal}
         categoriesDict={dict.categories}
+        materialsDict={dict.project_materials}
       />
     </div>
   );

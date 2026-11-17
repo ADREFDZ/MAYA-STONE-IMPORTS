@@ -57,7 +57,7 @@ export default function GalleryUploader({
     setMessage(null);
 
     try {
-      const compressedFile = await convertToWebP(file, { maxBytes: 12 * 1024 * 1024 });
+      const compressedFile = await convertToWebP(file);
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.webp`;
       const storagePath = `${folder}/${fileName}`;
 
