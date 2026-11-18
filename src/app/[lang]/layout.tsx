@@ -9,6 +9,8 @@ import { Suspense } from "react";
 import CookieConsentBanner from "@/components/ui/CookieConsentBanner";
 import CatalogPopup from "@/components/ui/CatalogPopup";
 import PromoNovemberPopup from "@/components/ui/PromoNovemberPopup";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getCatalogLinks } from "@/lib/data/public";
 import { getDictionary } from "../dictionaries";
 import type { Locale } from "@/lib/i18n/routes";
@@ -137,6 +139,9 @@ export default async function LangLayout({
           dict={dict.promo_november}
           whatsappNumber={dict.contact.cards.whatsapp_number}
         />
+        {/* Vercel: visitas (sin cookies) y velocidad real de carga */}
+        <VercelAnalytics />
+        <SpeedInsights />
         {/* Meta Pixel: solo se carga si el usuario acepta cookies */}
         <MetaPixel pixelId={process.env.NEXT_PUBLIC_META_PIXEL_ID} />
         {/* GA4 + Clarity (mapas de calor): solo con consentimiento */}

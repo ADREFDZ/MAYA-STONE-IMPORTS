@@ -1,10 +1,14 @@
 /**
- * MEDICIÓN DE EVENTOS (Meta Pixel + Google Analytics 4 + Microsoft Clarity)
+ * MEDICIÓN DE EVENTOS (Vercel Analytics + Meta Pixel + GA4 + Microsoft Clarity)
  * -----------------------------------------------------------------------------
  * Un solo llamado `track("lead", {...})` envía el evento a las herramientas
- * que estén cargadas. Si la persona no aceptó cookies, ninguna está cargada
- * y no se envía nada.
+ * que estén cargadas.
+ *   · Vercel Analytics: sin cookies ni datos personales, mide siempre.
+ *     (En Pro admite 2 propiedades por evento: se envían las 2 primeras.)
+ *   · Meta, GA4 y Clarity: solo si la persona aceptó cookies.
  */
+
+import { track as vercelTrack } from "@vercel/analytics";
 
 export type TrackEvent =
   | "lead" // formulario de contacto enviado
@@ -57,6 +61,7 @@ export function track(event: TrackEvent, params: Params = {}) {
     }
     window.gtag?.("event", GA_NAMES[event], clean);
     window.clarity?.("event", event);
+    vercelTrack(event, Object.fromEntries(Object.entries(clean).slice(0, 2)) as Record<string, string | number>);
   } catch {
     /* la medición nunca debe romper la interacción */
   }
