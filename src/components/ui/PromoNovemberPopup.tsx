@@ -263,7 +263,7 @@ export default function PromoNovemberPopup({ lang, dict, whatsappNumber }: Props
           Como el lomo de un catálogo: franja de mármol + firma "November at
           MAYA" + la oferta. Papel claro para destacar sobre fotos oscuras. */}
       {pill && !open && (
-        <div className="group fixed z-40 left-3 bottom-3 sm:left-6 sm:bottom-6 flex items-stretch bg-background text-text-primary border border-black-neutral/10 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 duration-500">
+        <div className="group fixed z-40 right-3 bottom-3 sm:right-6 sm:bottom-6 flex items-stretch bg-background text-text-primary border border-black-neutral/10 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 duration-500">
           <button
             ref={pillRef}
             type="button"
