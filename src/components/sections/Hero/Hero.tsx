@@ -63,7 +63,9 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
           start: "top top",
           end: "bottom bottom",
           scrub: 0.6,
-          invalidateOnRefresh: true,
+          // Sin invalidateOnRefresh: los valores son fijos, y al recalcular
+          // (carga de fuentes, cambio de tamaño) GSAP olvidaba el estado
+          // inicial de las líneas y aparecían antes de tiempo.
         },
       });
 
@@ -84,6 +86,7 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
           {
             y: 0,
             opacity: 1,
+            immediateRender: true,
             stagger: 0.35,
             duration: 1.1,
             ease: "power2.out",
@@ -100,6 +103,7 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
           {
             y: 0,
             opacity: 1,
+            immediateRender: true,
             duration: 0.8,
             ease: "power2.out",
           },
@@ -115,6 +119,7 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
           {
             y: 0,
             opacity: 1,
+            immediateRender: true,
             duration: 0.7,
             ease: "power2.out",
           },

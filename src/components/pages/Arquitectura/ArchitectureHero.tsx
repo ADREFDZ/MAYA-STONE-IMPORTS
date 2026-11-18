@@ -46,7 +46,6 @@ export default function ArchitectureHero({
             // Anclado con CSS (lg:sticky en el contenedor), no con GSAP: igual a
             // la vista, y Clarity dibuja la sección en su lugar.
             scrub: 1.1,
-            invalidateOnRefresh: true,
           },
         });
 
