@@ -341,3 +341,23 @@ input::-webkit-credentials-auto-fill-button {
     opacity: 0;
   }
 }
+
+/* Velo del cambio de idioma: cubre la página nueva desde el primer pintado
+   hasta que la cortina (LanguageTransitionOverlay) toma el control. Si algo
+   fallara, se desvanece solo a los 4 s: nunca deja la página tapada. */
+html.lang-transition::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 999998;
+  background-color: var(--color-black-neutral);
+  pointer-events: none;
+  animation: lang-veil-out 300ms ease 4s forwards;
+}
+
+@keyframes lang-veil-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

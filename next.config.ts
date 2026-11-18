@@ -27,6 +27,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Fuentes: se permite cargarlas desde otros dominios para que las
+        // grabaciones y mapas de calor de Clarity muestren la tipografía real
+        // (son archivos públicos; no expone nada).
+        source: "/_next/static/media/:path*",
+        headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
+      },
+      {
+        source: "/fonts/:path*",
+        headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
+      },
+      {
         source: "/:path*",
         headers: [
           {

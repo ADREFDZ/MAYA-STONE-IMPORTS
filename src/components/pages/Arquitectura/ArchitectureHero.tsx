@@ -43,10 +43,9 @@ export default function ArchitectureHero({
             trigger: wrapperRef.current,
             start: "top top",
             end: "bottom bottom",
-            pin: containerRef.current,
-            pinSpacing: true,
+            // Anclado con CSS (lg:sticky en el contenedor), no con GSAP: igual a
+            // la vista, y Clarity dibuja la sección en su lugar.
             scrub: 1.1,
-            anticipatePin: 1,
             invalidateOnRefresh: true,
           },
         });
@@ -144,7 +143,7 @@ export default function ArchitectureHero({
           muestre/oculte su barra (evita franjas al anclar). */}
       <header
         ref={containerRef}
-        className="w-full h-svh lg:h-lvh min-h-[560px] bg-background text-black-neutral overflow-hidden select-none"
+        className="w-full h-svh lg:h-lvh lg:sticky lg:top-0 min-h-[560px] bg-background text-black-neutral overflow-hidden select-none"
       >
         <div className="relative w-full h-full flex items-center">
           {/* HEMISFERIO IZQUIERDO: TEXTOS EDITORIALES */}

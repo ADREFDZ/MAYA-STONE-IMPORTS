@@ -119,7 +119,20 @@ export default async function LangLayout({
       lang={lang}
       className={`${graphik.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
+      // El script de abajo puede agregar la clase "lang-transition" antes de
+      // que React cargue (cambio de idioma en curso).
+      suppressHydrationWarning
     >
+      <head>
+        {/* Cambio de idioma en curso: cubre la página desde el primer pintado
+            (ver LanguageTransitionOverlay y .lang-transition en globals.css) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('maya_lang_transition')==='true')document.documentElement.classList.add('lang-transition')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-background">
         <LanguageTransitionOverlay />
         <Header dict={dict.navbar} lang={lang} />

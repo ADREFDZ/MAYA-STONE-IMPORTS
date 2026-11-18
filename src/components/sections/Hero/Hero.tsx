@@ -54,15 +54,15 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
     }
 
     const ctx = gsap.context(() => {
+      // El anclado lo hace CSS (`sticky` en la sección), no GSAP: se ve igual,
+      // va más fluido en celular y las grabaciones/mapas de calor (Clarity)
+      // dibujan el hero en su lugar en vez de dejarlo fijo encima de todo.
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: wrapperRef.current,
           start: "top top",
           end: "bottom bottom",
-          pin: containerRef.current,
-          pinSpacing: true,
           scrub: 0.6,
-          anticipatePin: 1,
           invalidateOnRefresh: true,
         },
       });
@@ -136,14 +136,19 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
     >
       <section
         ref={containerRef}
-        // h-lvh (altura con la barra del navegador OCULTA): GSAP fija la altura
-        // en px al anclar la sección; con dvh se quedaba con la altura "con
-        // barra" y al ocultarse la barra en el celular aparecía una franja
-        // negra debajo del video. Ver el padding inferior del contenido.
-        className="relative h-lvh w-full bg-black-neutral overflow-hidden top-0 left-0 z-10 flex flex-col justify-end"
+        // sticky: se queda arriba mientras se recorre el contenedor (200/300vh).
+        // h-lvh (altura con la barra del navegador OCULTA): con dvh, al ocultarse
+        // la barra en el celular aparecía una franja negra debajo del video.
+        // Ver el padding inferior del contenido.
+        className="sticky h-lvh w-full bg-black-neutral overflow-hidden top-0 left-0 z-10 flex flex-col justify-end"
       >
         {/* VIDEO DE FONDO */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
+        {/* La imagen fija del video va también de fondo: cubre mientras el video
+            carga y es lo que muestran las grabaciones de Clarity (no graban video). */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none bg-black-neutral bg-cover bg-center"
+          style={{ backgroundImage: "url(/videos/MAYA_Hero2-poster.webp)" }}
+        >
           <div className="absolute inset-0 bg-gradient-to-t from-black-pure/90 via-black-pure/40 to-black-pure/60 z-10" />
           <video
             ref={videoRef}
@@ -152,7 +157,7 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
             muted
             playsInline
             poster="/videos/MAYA_Hero2-poster.webp"
-            className="h-full w-full object-cover scale-100 bg-black-neutral"
+            className="h-full w-full object-cover scale-100"
           >
             {/* 720p (3 MB) en celular; 1080p (9 MB) en pantallas grandes. Ambos con
                 faststart: empiezan a reproducirse sin esperar la descarga.
