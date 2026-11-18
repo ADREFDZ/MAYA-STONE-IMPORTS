@@ -8,6 +8,7 @@ import Analytics from "@/components/analytics/Analytics";
 import { Suspense } from "react";
 import CookieConsentBanner from "@/components/ui/CookieConsentBanner";
 import CatalogPopup from "@/components/ui/CatalogPopup";
+import PromoNovemberPopup from "@/components/ui/PromoNovemberPopup";
 import { getCatalogLinks } from "@/lib/data/public";
 import { getDictionary } from "../dictionaries";
 import type { Locale } from "@/lib/i18n/routes";
@@ -128,6 +129,12 @@ export default async function LangLayout({
           lang={lang}
           dict={dict.collection_page.catalog_popup}
           catalogs={catalogs}
+          whatsappNumber={dict.contact.cards.whatsapp_number}
+        />
+        {/* Promoción del mes (fechas y apagado: src/lib/promo/november.ts) */}
+        <PromoNovemberPopup
+          lang={lang}
+          dict={dict.promo_november}
           whatsappNumber={dict.contact.cards.whatsapp_number}
         />
         {/* Meta Pixel: solo se carga si el usuario acepta cookies */}

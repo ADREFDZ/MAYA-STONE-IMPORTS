@@ -72,6 +72,7 @@ interface ContactClientProps {
       details_placeholder_quote: string;
       /** Mensaje precargado al llegar desde "Solicitar catálogo" ({collection}) */
       catalog_request_message: string;
+      promo_request_message: string;
       /** Mensaje precargado desde "Consultar disponibilidad" ({material}) */
       material_request_message: string;
       /** Mensaje precargado desde el CTA de una obra ({project}) */
@@ -134,7 +135,10 @@ export default function ContactClient({
   const catalogRequest = readParam("catalogo");
   const materialRequest = readParam("material");
   const projectRequest = readParam("project");
-  const prefilledMessage = catalogRequest
+  const promoRequest = readParam("promo");
+  const prefilledMessage = promoRequest
+    ? dict.form.promo_request_message
+    : catalogRequest
     ? fillTemplate(dict.form.catalog_request_message, {
         collection: catalogRequest,
       })
@@ -162,6 +166,7 @@ export default function ContactClient({
     const queryReason =
       searchParams.get("reason") ||
       searchParams.get("type") ||
+      (searchParams.get("promo") ? "quote" : null) ||
       (searchParams.get("catalogo") ? "other" : null);
     if (!queryReason) return;
 

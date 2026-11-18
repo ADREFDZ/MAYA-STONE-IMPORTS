@@ -919,7 +919,8 @@
       "privacy_notice_link": "Privacy Policy",
       "terms_notice_link": "Terms and Conditions",
       "terms_notice_connector": " and ",
-      "privacy_notice_suffix": "."
+      "privacy_notice_suffix": ".",
+      "promo_request_message": "Hello, I saw the November at MAYA catalogue and I'm interested in: "
     },
     "success": {
       "title": "Inquiry Received",
@@ -955,5 +956,35 @@
       "maps_button": "Open in Google Maps"
     },
     "showroom_image_alt": "MAYA Showroom"
+  },
+  "promo_november": {
+    "lockup": "November at",
+    "offer_label": "off 13 selected materials",
+    "description": "Marble, granite and quartzite slabs: Aretusa, Black Indian, Taj Mahal, Verde Alpi, Volakas and more. Valid through November 2026 or while stock lasts.",
+    "form_intro": "Leave your email to download the catalogue with prices.",
+    "email_label": "Email",
+    "email_placeholder": "you@email.com",
+    "consent": "I agree to receive emails from MAYA. I can unsubscribe at any time.",
+    "privacy_link": "Privacy notice",
+    "submit": "Download catalogue",
+    "submitting": "Preparing…",
+    "success_title": "Your catalogue is downloading",
+    "success_retry": "Download didn't start? Download it here",
+    "next_title": "Interested in a material?",
+    "next_text": "We'll confirm availability, number of slabs and final price.",
+    "whatsapp": "Message us on WhatsApp",
+    "whatsapp_message": "Hello, I saw the November at MAYA catalogue and I'm interested in: ",
+    "contact": "Send a request",
+    "pill": "November at MAYA: 30% off",
+    "pill_offer": "off 13 materials",
+    "pill_hide": "Hide promotion",
+    "close": "Close",
+    "image_alt": "Marble slab from the November selection",
+    "errors": {
+      "email": "Enter a valid email.",
+      "consent": "Tick the box so we can send you the catalogue.",
+      "rate": "Too many attempts. Please wait a few minutes.",
+      "generic": "We couldn't register your email. Please try again."
+    }
   }
 }

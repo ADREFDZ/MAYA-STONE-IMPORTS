@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ROUTES, type Locale } from "@/lib/i18n/routes";
 import { subscribeCatalogAction } from "@/app/[lang]/coleccion/subscribe";
 import { track } from "@/lib/analytics/track";
+import { isNovemberPromoActive } from "@/lib/promo/november";
 
 // =============================================================================
 // AVISO DE CATÁLOGO (todo el sitio)
@@ -148,7 +149,8 @@ export default function CatalogPopup({
   const currentCollection =
     collectionIdx >= 0 ? segments[collectionIdx + 1] || null : null;
 
-  const enabled = Boolean(dict) && !excluded;
+  // Mientras corre una promoción, su ventana ocupa este lugar (nunca dos a la vez)
+  const enabled = Boolean(dict) && !excluded && !isNovemberPromoActive();
 
   useEffect(() => {
     if (!enabled || shown.current || readSnooze()) return;

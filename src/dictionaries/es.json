@@ -919,7 +919,8 @@
       "privacy_notice_link": "Aviso de Privacidad",
       "terms_notice_link": "Términos y Condiciones",
       "terms_notice_connector": " y los ",
-      "privacy_notice_suffix": "."
+      "privacy_notice_suffix": ".",
+      "promo_request_message": "Hola, vi el catálogo November at MAYA y me interesa: "
     },
     "success": {
       "title": "Solicitud Recibida",
@@ -955,5 +956,35 @@
       "maps_button": "Abrir en Google Maps"
     },
     "showroom_image_alt": "Showroom MAYA"
+  },
+  "promo_november": {
+    "lockup": "November at",
+    "offer_label": "menos en 13 materiales seleccionados",
+    "description": "Mármol, granito y cuarcita en placa: Aretusa, Black Indian, Taj Mahal, Verde Alpi, Volakas y más. Vigente en noviembre de 2026 o hasta agotar existencias.",
+    "form_intro": "Déjanos tu correo para descargar el catálogo con precios.",
+    "email_label": "Correo electrónico",
+    "email_placeholder": "tu@correo.com",
+    "consent": "Acepto recibir correos de MAYA. Puedo darme de baja cuando quiera.",
+    "privacy_link": "Aviso de privacidad",
+    "submit": "Descargar catálogo",
+    "submitting": "Preparando…",
+    "success_title": "Tu catálogo se está descargando",
+    "success_retry": "¿No empezó la descarga? Descárgalo aquí",
+    "next_title": "¿Te interesa algún material?",
+    "next_text": "Te confirmamos disponibilidad, número de placas y precio final.",
+    "whatsapp": "Escribir por WhatsApp",
+    "whatsapp_message": "Hola, vi el catálogo November at MAYA y me interesa: ",
+    "contact": "Enviar solicitud",
+    "pill": "November at MAYA: 30% menos",
+    "pill_offer": "menos en 13 materiales",
+    "pill_hide": "Ocultar promoción",
+    "close": "Cerrar",
+    "image_alt": "Placa de mármol de la selección de noviembre",
+    "errors": {
+      "email": "Escribe un correo válido.",
+      "consent": "Marca la casilla para poder enviarte el catálogo.",
+      "rate": "Demasiados intentos. Espera unos minutos.",
+      "generic": "No se pudo registrar tu correo. Inténtalo de nuevo."
+    }
   }
 }

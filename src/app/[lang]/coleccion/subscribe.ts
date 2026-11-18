@@ -10,6 +10,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // · Solo se guarda con consentimiento explícito (casilla marcada).
 // =============================================================================
 
+// Origen del registro (se ve en el admin). Solo valores conocidos.
+const SOURCES = ["popup_catalogo", "promo_noviembre_2026"] as const;
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RATE_LIMIT = 5;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
@@ -66,6 +69,10 @@ export async function subscribeCatalogAction(
 
   const lang = str("lang", 2) === "en" ? "en" : "es";
   const collection = str("collection", 80) || null;
+  const rawSource = str("source", 40);
+  const source = (SOURCES as readonly string[]).includes(rawSource)
+    ? rawSource
+    : "popup_catalogo";
 
   try {
     const db = createAdminClient();
@@ -89,7 +96,7 @@ export async function subscribeCatalogAction(
       ? await db.from("newsletter_subscribers").update(row).eq("id", existing.id)
       : await db
           .from("newsletter_subscribers")
-          .insert({ ...row, email, source: "popup_catalogo" });
+          .insert({ ...row, email, source });
 
     if (error) {
       console.error("[newsletter] No se pudo guardar:", error.message);
