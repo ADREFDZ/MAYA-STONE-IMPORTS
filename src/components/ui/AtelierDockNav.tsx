@@ -168,7 +168,7 @@ export default function AtelierDockNav({
                   onClick={() => handleSelect(item.key)}
                   className={`w-full text-left px-3 py-2 rounded-3xs font-mono text-maya-small uppercase tracking-data transition-all duration-200 flex items-center justify-between cursor-pointer group ${
                     isSelected
-                      ? "bg-accent text-white font-bold shadow-xs"
+                      ? "bg-accent text-on-accent font-bold shadow-xs"
                       : "bg-surface-secondary/5 text-gray-warm/75 hover:bg-white/10 hover:text-white"
                   }`}
                 >

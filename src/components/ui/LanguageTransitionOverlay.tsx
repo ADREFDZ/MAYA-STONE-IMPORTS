@@ -145,11 +145,11 @@ export default function LanguageTransitionOverlay() {
       >
         <Image
           src="/images/MAYA_LOGOTIPO_LIGHT.png"
-          alt=""
-          width={110}
-          height={28}
+          alt="MAYA"
+          width={135}
+          height={20}
           priority
-          className="h-4 w-auto object-contain opacity-90"
+          className="h-4 sm:h-[18px] w-auto object-contain"
         />
         <div className="relative w-20 h-px bg-gray-warm/15 overflow-hidden">
           <div className="absolute inset-y-0 w-1/2 bg-accent animate-indeterminate" />

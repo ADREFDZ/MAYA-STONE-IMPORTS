@@ -136,7 +136,7 @@ function WeeklyBars({
         ))}
       </div>
       <figcaption className="text-[11px] text-text-muted">
-        Semana que inicia el lunes indicado. En bronce, la semana actual.
+        Semana que inicia el lunes indicado. Resaltada, la semana actual.
       </figcaption>
       <table className="sr-only">
         <caption>Leads por semana</caption>

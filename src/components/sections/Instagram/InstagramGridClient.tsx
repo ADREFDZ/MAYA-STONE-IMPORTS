@@ -143,7 +143,7 @@ export default function InstagramGridClient({
       {/* 1. TARJETA DE PERFIL OFICIAL */}
       <div className="flex flex-row items-center justify-between gap-3 p-3 sm:p-4 bg-surface border border-border-light rounded-2xs shadow-xs">
         <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-          <div className="relative p-[1.5px] rounded-full bg-gradient-to-tr from-accent via-[#c4975f] to-accent-soft shrink-0">
+          <div className="relative p-[1.5px] rounded-full bg-gradient-to-tr from-accent via-accent/40 to-accent shrink-0">
             <div className="rounded-full border border-surface">
               <Avatar
                 src={profile?.pictureUrl}

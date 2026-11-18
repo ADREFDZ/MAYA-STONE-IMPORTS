@@ -11,7 +11,7 @@ interface SectionLabelProps {
   children: React.ReactNode;
   /** Estilo visual: 'minimal' (Capítulo X), 'lined' (Líneas) o 'bullet' (Punto) */
   variant?: SectionLabelVariant;
-  /** Tema de color: 'light' (Gris oscuro), 'dark' (Gris claro) o 'accent' (Bronce) */
+  /** Tema de color: 'light' (Gris oscuro), 'dark' (Gris claro) o 'accent' (tinta de acento, monocromo) */
   theme?: SectionLabelTheme;
   /** Alineación del bloque */
   align?: SectionLabelAlign;

@@ -6,7 +6,7 @@
       (bg-background, text-text-primary, border-border-light, text-accent-ink…).
       Se declaran con `static` para que TODAS las variables existan en :root,
       aunque alguna solo se use desde CSS o estilos inline.
-   3. Contexto oscuro: el bronce de TEXTO se aclara automáticamente.
+   3. Contexto oscuro: el acento se invierte automáticamente (tinta clara).
    4. Paletas por colección.
    ========================================================================= */
 
@@ -18,12 +18,14 @@
   --raw-gray-cool: #d9d8d6; /* PANTONE COOL GRAY 1 C */
   --raw-white: #ffffff;
 
-  /* Acento bronce/latón (fuera del manual Pantone; detalle material).
-     - bronze:       líneas, subrayados, puntos, fondos pequeños (decorativo).
-     - bronze-ink-*: texto. Ajustados para cumplir contraste WCAG AA (≥4.5:1). */
-  --raw-accent-bronze: #8c7355;
-  --raw-accent-bronze-ink-dark: #5f4d38; /* sobre fondos claros: 5.4:1 */
-  --raw-accent-bronze-ink-light: #b39a78; /* sobre fondos oscuros: 5.7:1 */
+  /* Acento editorial MONOCROMO: solo colores del manual de marca.
+     No hay un tono de acento; el acento es la "tinta" del contexto.
+     El énfasis se logra con contraste, peso, mayúsculas y líneas finas.
+     - Sobre claro: Neutral Black / Black C  (14:1 y 13:1 sobre Warm Gray 1)
+     - Sobre oscuro: Warm Gray 1             (12:1 sobre Neutral Black) */
+  --raw-accent-ink-on-light: var(--raw-black-pure);
+  --raw-accent-line-on-light: var(--raw-black-neutral);
+  --raw-accent-on-dark: var(--raw-gray-warm);
 
   /* ---- Paleta de colección por defecto (MAYA Neutral Black) ----
      La usa cualquier colección nueva que aún no tenga tema propio. */
@@ -70,10 +72,11 @@
   --color-text-muted: #5a5855;
   --color-text-inverse: var(--raw-gray-warm);
 
-  /* Acento */
-  --color-accent: var(--raw-accent-bronze); /* decorativo: bg-, border-, líneas */
-  --color-accent-soft: rgba(140, 115, 85, 0.14);
-  --color-accent-ink: var(--raw-accent-bronze-ink-dark); /* texto: text-accent-ink */
+  /* Acento (monocromo, se invierte en contexto oscuro) */
+  --color-accent: var(--raw-accent-line-on-light); /* decorativo: bg-, border-, líneas */
+  --color-accent-soft: rgba(37, 37, 37, 0.05); /* velo sutil: campos, hovers */
+  --color-accent-ink: var(--raw-accent-ink-on-light); /* texto: text-accent-ink */
+  --color-on-accent: var(--raw-gray-warm); /* texto sobre bg-accent */
 
   /* Bloques oscuros */
   --color-bg-dark: var(--raw-black-neutral);
@@ -124,8 +127,8 @@
 }
 
 /* =========================================================================
-   CONTEXTO OSCURO → bronce de texto claro
-   Cualquier elemento dentro de un contenedor oscuro hereda el tono claro, sin
+   CONTEXTO OSCURO → acento invertido (Warm Gray 1)
+   Cualquier elemento dentro de un contenedor oscuro hereda la tinta clara, sin
    tener que cambiar clases en cada componente.
    ========================================================================= */
 :where(
@@ -154,12 +157,18 @@
     [class~="bg-bg-dark"],
     [class~="bg-bg-dark-pure"]
   ) {
-  --color-accent-ink: var(--raw-accent-bronze-ink-light);
+  --color-accent: var(--raw-accent-on-dark);
+  --color-accent-soft: rgba(215, 210, 203, 0.08);
+  --color-accent-ink: var(--raw-accent-on-dark);
+  --color-on-accent: var(--raw-black-neutral);
 }
 
-/* Header en modo sólido (claro): el bronce de texto vuelve al tono oscuro */
+/* Header en modo sólido (claro): el acento vuelve a la tinta oscura */
 body > header.header-light {
-  --color-accent-ink: var(--raw-accent-bronze-ink-dark);
+  --color-accent: var(--raw-accent-line-on-light);
+  --color-accent-soft: rgba(37, 37, 37, 0.05);
+  --color-accent-ink: var(--raw-accent-ink-on-light);
+  --color-on-accent: var(--raw-gray-warm);
 }
 
 /* =========================================================================

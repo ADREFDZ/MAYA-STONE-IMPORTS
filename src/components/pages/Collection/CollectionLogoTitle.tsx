@@ -7,6 +7,11 @@ interface CollectionLogoTitleProps {
   as?: "h1" | "h2" | "h3" | "h4" | "p";
   className?: string;
   imgClassName?: string;
+  imgStyle?: React.CSSProperties;
+  /** Avisa cuando el isotipo terminó de cargar (solo en cliente) */
+  onLogoLoad?: (img: HTMLImageElement) => void;
+  /** "anonymous" para poder medir el isotipo en un canvas */
+  crossOrigin?: "anonymous";
   style?: React.CSSProperties;
 }
 
@@ -21,6 +26,9 @@ export default function CollectionLogoTitle({
   as: Tag = "h2",
   className = "",
   imgClassName = "",
+  imgStyle,
+  onLogoLoad,
+  crossOrigin,
   style,
 }: CollectionLogoTitleProps) {
   if (!logoUrl) {
@@ -41,6 +49,10 @@ export default function CollectionLogoTitle({
         alt=""
         aria-hidden="true"
         className={`block w-auto max-w-full object-contain object-left ${imgClassName}`}
+        style={imgStyle}
+        data-logo={logoUrl}
+        crossOrigin={crossOrigin}
+        onLoad={onLogoLoad ? (e) => onLogoLoad(e.currentTarget) : undefined}
       />
     </Tag>
   );

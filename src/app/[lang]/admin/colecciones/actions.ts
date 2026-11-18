@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/requireAdmin";
+import { normalizeLogo } from "@/lib/images/normalizeLogo";
 import { revalidatePath } from "next/cache";
 import { invalidatePublicCache } from "@/lib/data/public";
 
@@ -115,14 +116,30 @@ export async function uploadCollectionLogoAction(formData: FormData) {
 
     const supabase = await createClient();
     const cleanSlug = slug.trim().replace(/[^a-zA-Z0-9_-]/g, "");
-    const fileExt = file.name.split(".").pop()?.toLowerCase() || "webp";
+
+    // Isotipos raster: se recortan los márgenes transparentes y se reducen a
+    // 240 px de alto. Así todos se ven del mismo tamaño en el sitio y pesan
+    // poco. Los SVG se suben tal cual.
+    let body: File | Buffer = file;
+    let contentType = file.type || "image/webp";
+    let fileExt = file.name.split(".").pop()?.toLowerCase() || "webp";
+    if (file.type !== "image/svg+xml" && fileExt !== "svg") {
+      try {
+        body = await normalizeLogo(Buffer.from(await file.arrayBuffer()));
+        contentType = "image/png";
+        fileExt = "png";
+      } catch (e) {
+        console.error("[logo] No se pudo normalizar; se sube el original:", e);
+      }
+    }
+
     const fileName = `logo-${Date.now()}.${fileExt}`;
     const filePath = `collections/${cleanSlug}/logo/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("materials")
-      .upload(filePath, file, {
-        contentType: file.type || "image/webp",
+      .upload(filePath, body, {
+        contentType,
         cacheControl: "31536000",
         upsert: true,
       });

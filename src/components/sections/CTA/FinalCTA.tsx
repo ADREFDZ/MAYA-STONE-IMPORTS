@@ -182,7 +182,7 @@ export default function FinalCTA({ lang = "es", dict }: FinalCTAProps) {
                 style={{
                   transform: "translateZ(0px)",
                 }}
-                className="absolute inset-0 bg-[#e6e2da] rounded-2xs shadow-2xl border border-black-neutral/15 overflow-hidden"
+                className="absolute inset-0 bg-gray-cool rounded-2xs shadow-2xl border border-black-neutral/15 overflow-hidden"
               >
                 <Image
                   src="/images/Travertinos.jpg"
@@ -204,7 +204,7 @@ export default function FinalCTA({ lang = "es", dict }: FinalCTAProps) {
                       : "translate3d(18%, -10%, 30px)",
                   transition: "transform 400ms ease-out",
                 }}
-                className="absolute right-0 top-3 sm:top-5 lg:top-6 w-[56%] h-[66%] sm:h-[68%] rounded-3xs overflow-hidden shadow-2xl border border-black-neutral/20 bg-[#2b2621]"
+                className="absolute right-0 top-3 sm:top-5 lg:top-6 w-[56%] h-[66%] sm:h-[68%] rounded-3xs overflow-hidden shadow-2xl border border-black-neutral/20 bg-black-neutral"
               >
                 <Image
                   src="/images/Jarron.jpg"

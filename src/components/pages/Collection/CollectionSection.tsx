@@ -191,7 +191,7 @@ export default function CollectionSection({
                 title={title || ""}
                 logoUrl={collection.logo_url}
                 className="text-col-text font-sans font-light text-maya-h1 lg:text-maya-display uppercase tracking-editorial leading-tight break-words"
-                imgClassName="h-9 sm:h-12 md:h-14 lg:h-16 xl:h-20 max-w-[85%] col-logo"
+                imgClassName="h-6 sm:h-8 md:h-9 lg:h-11 xl:h-[52px] max-w-[85%] col-logo"
               />
               {tagline && (
                 <p className="text-col-secondary font-serif italic text-maya-body sm:text-maya-h4 pt-0.5">

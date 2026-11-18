@@ -283,7 +283,7 @@ export default function Collection({
                     onClick={() => setActiveView("render")}
                     className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-data transition-all cursor-pointer ${
                       activeView === "render"
-                        ? "bg-accent text-white font-semibold shadow-xs"
+                        ? "bg-accent text-on-accent font-semibold shadow-xs"
                         : "text-gray-warm/70 hover:text-white"
                     }`}
                   >

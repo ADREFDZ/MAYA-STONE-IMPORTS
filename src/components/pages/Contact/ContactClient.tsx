@@ -242,7 +242,7 @@ export default function ContactClient({
           <div className="lg:col-span-7 bg-surface border border-border-light p-5 sm:p-8 lg:p-12 flex flex-col justify-between rounded-2xs shadow-2xs">
             {submitted ? (
               <div className="my-auto py-12 sm:py-16 space-y-4 text-center animate-in fade-in duration-300">
-                <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center font-mono text-maya-body mx-auto shadow-xs">
+                <div className="w-12 h-12 rounded-full bg-accent text-on-accent flex items-center justify-center font-mono text-maya-body mx-auto shadow-xs">
                   ✓
                 </div>
                 <h2 className="font-sans font-light tracking-editorial text-maya-h3 sm:text-maya-h2 text-black-neutral uppercase">

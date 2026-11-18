@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ROUTES, type Locale } from "@/lib/i18n/routes";
 
@@ -48,9 +49,19 @@ export default function Footer({ dict, lang = "es" }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-8 lg:gap-10 pb-10 sm:pb-12 border-b border-gray-warm/15 items-start">
           {/* Columna 1: Identidad y Manifiesto */}
           <div className="md:col-span-5 lg:col-span-4 space-y-3.5 sm:space-y-4">
-            <div className="font-sans text-maya-small tracking-[0.25em] font-medium uppercase text-gray-warm select-none">
-              M A Y A
-            </div>
+            <Link
+              href={currentLocale === "en" ? "/en" : "/"}
+              className="inline-block transition-opacity duration-300 hover:opacity-80"
+              aria-label="MAYA Stone Imports"
+            >
+              <Image
+                src="/images/MAYA_LOGOTIPO_LIGHT.png"
+                alt="MAYA Stone Imports"
+                width={135}
+                height={20}
+                className="h-3.5 sm:h-4 w-auto object-contain"
+              />
+            </Link>
             <p className="font-sans text-maya-label font-light tracking-data text-gray-warm/70 max-w-sm leading-relaxed uppercase">
               {dict.brand_desc}
             </p>

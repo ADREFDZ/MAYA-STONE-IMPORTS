@@ -15,6 +15,7 @@ import CollectionLogoTitle from "@/components/pages/Collection/CollectionLogoTit
 import { getI18n, type LocalizedString } from "@/lib/i18n/utils";
 import { ROUTES, type Locale } from "@/lib/i18n/routes";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { balanceLogos, measureLogo, type LogoMetric } from "@/lib/utils/logoBalance";
 import { lockScroll } from "@/lib/utils/scrollLock";
 
 interface CollectionItemDb {
@@ -55,6 +56,15 @@ interface CollectionsBentoProps {
 const EASE = "cubic-bezier(0.76, 0, 0.24, 1)";
 const OPEN_MS = 600;
 const HEADER_INSIDE_MAX = 6;
+
+/* ISOTIPOS DEL MISMO TAMAÑO VISUAL
+   Cada isotipo se ajusta por su proporción y grosor (src/lib/utils/logoBalance)
+   para que todos se perciban iguales. Luego TODOS se escalan con el mismo
+   factor: el máximo de diseño (--logo-h) o, si no cabe, lo que permita que el
+   más ancho quepa en su espacio (100cqw). Ninguno se encoge por separado.
+   Requiere isotipos recortados sin márgenes (scripts/normalizar-logos.mjs;
+   el admin ya los recorta al subirlos). */
+const LOGO_REVEAL_TIMEOUT_MS = 1500;
 const TARGET_ORDER = ["reserve", "essentials", "travertino", "dune"];
 const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII"];
 
@@ -68,6 +78,29 @@ export default function CollectionsBento({
   const { device, hasHover, isLandscape } = useDeviceType();
 
   const [hover, setHover] = useState<number | null>(null);
+  // Medidas de cada isotipo (proporción y grosor), por URL
+  const [logoMetrics, setLogoMetrics] = useState<Record<string, LogoMetric>>({});
+  const [logoTimeout, setLogoTimeout] = useState(false);
+  const listRef = useRef<HTMLUListElement>(null);
+  const reportLogo = useCallback((img: HTMLImageElement) => {
+    const url = img.dataset.logo;
+    if (!url) return;
+    setLogoMetrics((prev) => {
+      if (prev[url]) return prev;
+      const m = measureLogo(img);
+      return m ? { ...prev, [url]: m } : prev;
+    });
+  }, []);
+  // Isotipos que ya estaban cargados antes de que React tomara el control
+  useEffect(() => {
+    listRef.current
+      ?.querySelectorAll<HTMLImageElement>("img[data-logo]")
+      .forEach((img) => {
+        if (img.complete && img.naturalWidth > 0) reportLogo(img);
+      });
+    const t = window.setTimeout(() => setLogoTimeout(true), LOGO_REVEAL_TIMEOUT_MS);
+    return () => window.clearTimeout(t);
+  }, [reportLogo]);
   const [active, setActive] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("closed");
   const [origin, setOrigin] = useState("inset(0 0 0 0)");
@@ -196,6 +229,23 @@ export default function CollectionsBento({
   });
 
   const n = items.length;
+
+  // Equilibrio óptico de isotipos (ver nota arriba)
+  const logoUrls = items.map((it) => it.logoUrl).filter(Boolean) as string[];
+  const measured = Object.fromEntries(
+    logoUrls.filter((u) => logoMetrics[u]).map((u) => [u, logoMetrics[u]]),
+  );
+  const balance = balanceLogos(measured);
+  const logosReady = logoTimeout || logoUrls.every((u) => logoMetrics[u]);
+  const logoStyle = (url: string | null): CSSProperties => {
+    const rel = url ? balance.rel[url] : undefined;
+    const scale = `min(var(--logo-h), calc(90cqw / ${balance.maxWidth.toFixed(3)}))`;
+    return {
+      height: rel ? `calc(${rel.toFixed(3)} * ${scale})` : "var(--logo-h)",
+      opacity: logosReady ? 1 : 0,
+      transition: "opacity 300ms ease",
+    };
+  };
   const headerInside = n <= HEADER_INSIDE_MAX && hasHover;
   const lastCol = n - 1;
   const current = active !== null ? items[active] : null;
@@ -254,6 +304,7 @@ export default function CollectionsBento({
       {/* ESCENARIO DE COLECCIONES */}
       <div className="relative flex-1 w-full min-h-0 flex flex-col border-t border-black-neutral/15 md:border-t-0">
         <ul
+          ref={listRef}
           className={`flex-1 w-full h-full flex ${
             device === "mobile" || (!hasHover && !isLandscape)
               ? "flex-col"
@@ -330,18 +381,21 @@ export default function CollectionsBento({
                       hasHover ? "md:hidden" : ""
                     } relative z-10 w-full h-full flex items-center justify-between px-5 sm:px-7`}
                   >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <span className="font-mono text-maya-small font-bold shrink-0 text-col-accent">
+                    <div className="flex flex-1 items-center gap-3.5 min-w-0">
+                      <span className="w-7 font-mono text-maya-small font-bold shrink-0 text-col-accent">
                         {it.romanIdx}
                       </span>
 
-                      <div className="h-7 sm:h-8 flex items-center overflow-hidden">
+                      <div className="@container flex-1 min-w-0 h-8 sm:h-9 flex items-center overflow-hidden [--logo-h:24px] sm:[--logo-h:28px]">
                         <CollectionLogoTitle
                           as="p"
                           title={it.name}
                           logoUrl={it.logoUrl}
+                          onLogoLoad={reportLogo}
+                          crossOrigin="anonymous"
                           className="font-sans font-light uppercase tracking-[0.08em] leading-none text-maya-h3 transition-colors duration-300 truncate text-col-text"
-                          imgClassName="h-6 sm:h-7 w-auto max-w-[170px] sm:max-w-[210px] object-contain object-left col-logo"
+                          imgClassName="w-auto object-contain object-left col-logo"
+                          imgStyle={logoStyle(it.logoUrl)}
                         />
                       </div>
                     </div>
@@ -390,16 +444,19 @@ export default function CollectionsBento({
 
                     {/* Isotipo en la base de la columna */}
                     <div className="h-16 lg:h-20 shrink-0 flex items-center justify-between gap-4 px-5 md:px-6 lg:px-8">
-                      <span className="min-w-0 max-w-[90%] md:max-w-full">
-                        <div className="h-7 md:h-8 lg:h-9 flex items-center">
+                      <span className="block w-full min-w-0">
+                        <div className="@container w-full h-9 lg:h-10 flex items-center [--logo-h:28px] lg:[--logo-h:34px]">
                           <CollectionLogoTitle
                             as="p"
                             title={it.name}
                             logoUrl={it.logoUrl}
+                            onLogoLoad={reportLogo}
+                            crossOrigin="anonymous"
                             className="font-sans font-light uppercase tracking-[0.08em] leading-none text-maya-h4 lg:text-maya-h3 transition-colors duration-300"
-                            imgClassName={`h-7 md:h-8 lg:h-9 w-auto max-w-[170px] sm:max-w-[200px] lg:max-w-[240px] object-contain object-left transition-[filter] duration-500 ${
+                            imgClassName={`w-auto object-contain object-left transition-[filter] duration-500 ${
                               isLit ? "col-logo" : "brightness-0"
                             }`}
+                            imgStyle={logoStyle(it.logoUrl)}
                           />
                         </div>
                       </span>
@@ -508,7 +565,7 @@ export default function CollectionsBento({
                     title={current.name}
                     logoUrl={current.logoUrl}
                     className="font-sans font-light uppercase tracking-[0.08em] leading-none text-maya-h4 lg:text-maya-h3 text-col-text"
-                    imgClassName="h-8 md:h-9 lg:h-10 w-auto max-w-[220px] sm:max-w-[260px] lg:max-w-[300px] object-contain object-left col-logo"
+                    imgClassName="h-5 md:h-6 lg:h-7 w-auto object-contain object-left col-logo"
                   />
                 </div>
               </div>

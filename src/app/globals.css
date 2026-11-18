@@ -107,10 +107,10 @@
    ESTILOS BASE
    ========================================= */
 
-/* Selección de texto global (bronce de marca + blanco: 4.6:1) */
+/* Selección de texto global: tinta del contexto invertida (monocromo) */
 ::selection {
   background-color: var(--color-accent);
-  color: var(--color-white, #fff);
+  color: var(--color-on-accent);
 }
 
 /* Select nativo con flecha propia (appearance-none la elimina) */
@@ -148,8 +148,8 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Foco visible al navegar con teclado (accesibilidad). Usa el bronce de
-   texto, que se adapta a fondos claros u oscuros. Prevalece sobre los
+/* Foco visible al navegar con teclado (accesibilidad). Usa la tinta de
+   acento, que se adapta a fondos claros u oscuros. Prevalece sobre los
    `focus:outline-none` de los componentes solo cuando el foco es por teclado. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 1px solid var(--color-accent-ink) !important;

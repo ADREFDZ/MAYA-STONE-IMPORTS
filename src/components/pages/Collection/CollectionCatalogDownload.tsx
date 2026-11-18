@@ -123,7 +123,7 @@ export default function CollectionCatalogDownload({
                 title={collectionTitle}
                 logoUrl={logoUrl}
                 className="max-w-[90%] font-sans font-light text-maya-small lg:text-maya-h4 uppercase tracking-[0.14em] text-white"
-                imgClassName="h-5 lg:h-6 brightness-0 invert"
+                imgClassName="h-3.5 lg:h-4 brightness-0 invert"
               />
               <span className="block h-px w-6 bg-white/60" aria-hidden="true" />
               <span className="block font-mono text-[10px] uppercase tracking-data text-white/75">
