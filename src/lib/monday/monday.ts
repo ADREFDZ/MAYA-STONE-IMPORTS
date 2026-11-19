@@ -1,174 +1,219 @@
-import { toTitleCase } from "@/lib/utils/strings";
-interface CreateMondayLeadParams {
+import { FALLBACK_ASSIGNEE, findSalesRegion } from "@/lib/monday/regions";
+
+// =============================================================================
+// ENVÍO DE LEADS DEL SITIO A MONDAY (tablero "1. Leads")
+// -----------------------------------------------------------------------------
+// Cada solicitud del formulario de contacto crea un lead en el grupo
+// "1. LEADS POR CONTACTAR" con:
+//   · Estatus "1. POR CONTACTAR" y Canal de Origen "SITIO WEB"
+//   · Vendedor según la región de la ubicación (src/lib/monday/regions.ts);
+//     si no se reconoce, Isabel Ayala
+//   · Empresa, Proyecto, Correo, Teléfono y una ficha completa en Comments
+// y le manda una notificación en Monday al vendedor asignado.
+//
+// Variables (Vercel → Secret): MONDAY_API_TOKEN, MONDAY_LEADS_BOARD_ID
+// Solo se usa en el servidor: nunca importar desde un componente "use client".
+// =============================================================================
+
+const API_URL = "https://api.monday.com/v2";
+
+// IDs de columnas y grupo del tablero "1. Leads" (7263709584)
+const COL = {
+  seller: "multiple_person_mknxacpy",
+  status: "lead_status",
+  company: "lead_company",
+  project: "text",
+  email: "lead_email",
+  phone: "lead_phone",
+  comments: "long_text",
+  source: "color_mm6sh70j",
+} as const;
+const GROUP_NEW_LEADS = "group_mm8kxw5g"; // "1. LEADS POR CONTACTAR"
+const STATUS_NEW = "1. POR CONTACTAR";
+const SOURCE_WEB = "SITIO WEB";
+
+export interface MondayWebLead {
   name: string;
   email: string;
   phone?: string | null;
   company?: string | null;
-  profile_type?: string | null;
-  reason?: string | null;
-  category_interest?: string | null;
+  project_name?: string | null;
+  location: string;
+  client_type_label?: string | null;
+  reason_label?: string | null;
+  interest_label?: string | null;
+  material_interest?: string | null;
   preferred_date?: string | null;
-  preferred_time?: string | null;
+  preferred_time_label?: string | null;
   message?: string | null;
+  lang?: string | null;
 }
 
-// Diccionario para traducir etiquetas técnicas a nombres ejecutivos
-const REASON_LABELS: Record<string, string> = {
-  showroom: "Visita Showroom",
-  quote: "Cotización de Proyecto",
-  samples: "Solicitud de Muestras",
-  consulting: "Asesoría Técnica / Bespoke",
-  other: "Contacto General",
-};
+export type MondaySendResult =
+  | { ok: true; itemId: string; seller: string; region: string | null }
+  | { ok: false; error: string };
 
-// Las colecciones llegan con su slug (p. ej. "dune-ivory") y se muestran
-// con formato de título; estas son las opciones fijas del formulario.
-const CATEGORY_LABELS: Record<string, string> = {
-  wood: "Rivas Wood",
-  bespoke: "Bespoke / Servicios a medida",
-  other: "Otro",
-  // Valores anteriores
-  all: "Toda la Colección",
-  stone: "Piedra Natural (Mármol / Cuarcita / Travertino)",
-};
-
-const PROFILE_LABELS: Record<string, string> = {
-  architecture: "Despacho de arquitectura",
-  interior: "Estudio de interiorismo",
-  developer: "Desarrolladora inmobiliaria",
-  construction: "Constructora",
-  private: "Cliente particular",
-  other: "Otro",
-  // Valor anterior (leads registrados antes del cambio)
-  architect: "Arquitecto / Estudio",
-};
-
-export async function sendLeadToMonday(params: CreateMondayLeadParams) {
-  const token = process.env.MONDAY_API_TOKEN;
-  const boardId = process.env.MONDAY_LEADS_BOARD_ID;
-
-  if (!token || !boardId) {
-    console.warn(
-      "⚠️ Monday.com: MONDAY_API_TOKEN o MONDAY_LEADS_BOARD_ID no configurados.",
-    );
-    return { success: false, error: "Missing configuration" };
-  }
-
-  const todayIso = new Date().toISOString().split("T")[0];
-
-  const readableReason =
-    REASON_LABELS[params.reason || ""] || params.reason || "Web Contact";
-  const readableCategory =
-    CATEGORY_LABELS[params.category_interest || ""] ||
-    (params.category_interest
-      ? toTitleCase(params.category_interest.replace(/-/g, " "))
-      : params.category_interest);
-  const readableProfile =
-    PROFILE_LABELS[params.profile_type || ""] ||
-    params.profile_type ||
-    "No especificado";
-
-  // Estructura de ficha ejecutiva para Comments
-  const commentsParts = [
-    `[WEB MAYA] MOTIVO: ${readableReason.toUpperCase()}`,
-    `• Perfil: ${readableProfile}`,
-    readableCategory ? `• Materia de interés: ${readableCategory}` : null,
-    params.preferred_date
-      ? `• Cita propuesta: ${params.preferred_date} (${params.preferred_time === "morning" ? "Mañana" : "Tarde"})`
-      : null,
-    params.message ? `• Detalles: "${params.message.trim()}"` : null,
-  ].filter(Boolean);
-
-  const formattedComments = commentsParts.join("\n");
-
-  // Nombre del ítem principal en Monday
-  const itemName = params.company?.trim()
-    ? `${params.company.trim().toUpperCase()} (${params.name.trim()})`
-    : params.name.trim().toUpperCase();
-
-  // Mapeo seguro con los Column IDs de tu tablero
-  // Ajusta las llaves si tu Monday usa 'text', 'date', etc.
-  const columnValues: Record<string, any> = {
-    // Estado inicial
-    status: { label: "New Lead" },
-
-    // Fecha de registro
-    date: { date: todayIso },
-
-    // Empresa
-    company: params.company?.trim() || params.name.trim(),
-
-    // Perfil profesional
-    title: readableProfile,
-
-    // Correo electrónico
-    email: {
-      email: params.email.trim(),
-      text: params.email.trim(),
-    },
-
-    // Teléfono
-    phone: params.phone
-      ? {
-          phone: params.phone.trim().replace(/[^\d+]/g, ""),
-          countryShortName: "MX",
-        }
-      : undefined,
-
-    // Comentarios estructurados
-    comments: formattedComments,
-
-    // Canal de procedencia
-    canal_de_origen: "Página Web",
-  };
-
-  // Limpiar campos undefined
-  Object.keys(columnValues).forEach((key) => {
-    if (columnValues[key] === undefined) {
-      delete columnValues[key];
-    }
-  });
-
-  const query = `
-    mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
-      create_item (
-        board_id: $boardId,
-        item_name: $itemName,
-        column_values: $columnValues
-      ) {
-        id
-      }
-    }
-  `;
-
-  const variables = {
-    boardId: Number(boardId),
-    itemName,
-    columnValues: JSON.stringify(columnValues),
-  };
-
+async function mondayRequest<T>(
+  token: string,
+  query: string,
+  variables: Record<string, unknown>,
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
   try {
-    const res = await fetch("https://api.monday.com/v2", {
+    const res = await fetch(API_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-        "API-Version": "2024-01",
-      },
+      headers: { "Content-Type": "application/json", Authorization: token },
       body: JSON.stringify({ query, variables }),
       cache: "no-store",
+      signal: controller.signal,
     });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json || json.errors || json.error_message) {
+      const msg =
+        json?.errors?.[0]?.message ||
+        json?.error_message ||
+        `HTTP ${res.status}`;
+      throw new Error(String(msg));
+    }
+    return json.data as T;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
-    const result = await res.json();
+/** Teléfono para la columna de Monday: solo dígitos y país (MX por defecto). */
+function phoneValue(raw: string) {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 8) return null;
+  // +52 1 / +52 al inicio, o número nacional de 10 dígitos
+  if (raw.trim().startsWith("+") && !digits.startsWith("52")) {
+    return { phone: `+${digits}` }; // otro país: Monday lo detecta por la lada
+  }
+  const national = digits.replace(/^521?/, "");
+  return { phone: `52${national.slice(-10)}`, countryShortName: "MX" };
+}
 
-    if (result.errors) {
-      console.error("Monday API GraphQL Error:", JSON.stringify(result.errors));
-      return { success: false, errors: result.errors };
+function buildComments(lead: MondayWebLead, regionText: string): string {
+  return [
+    `[SITIO WEB] ${(lead.reason_label || "Contacto").toUpperCase()}`,
+    `• Ubicación: ${lead.location} (${regionText})`,
+    lead.client_type_label ? `• Perfil: ${lead.client_type_label}` : null,
+    lead.company ? `• Empresa: ${lead.company}` : null,
+    lead.project_name ? `• Proyecto: ${lead.project_name}` : null,
+    lead.interest_label ? `• Interés: ${lead.interest_label}` : null,
+    lead.material_interest ? `• Material consultado: ${lead.material_interest}` : null,
+    lead.preferred_date
+      ? `• Cita propuesta: ${lead.preferred_date}${lead.preferred_time_label ? ` (${lead.preferred_time_label})` : ""}`
+      : null,
+    `• Correo: ${lead.email}`,
+    lead.phone ? `• Teléfono: ${lead.phone}` : null,
+    lead.lang === "en" ? "• Idioma: inglés" : null,
+    lead.message ? `\nMensaje:\n${lead.message.trim()}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export async function sendLeadToMonday(
+  lead: MondayWebLead,
+): Promise<MondaySendResult> {
+  const token = process.env.MONDAY_API_TOKEN;
+  const boardId = process.env.MONDAY_LEADS_BOARD_ID;
+  if (!token || !boardId) {
+    return { ok: false, error: "Faltan MONDAY_API_TOKEN o MONDAY_LEADS_BOARD_ID." };
+  }
+
+  const region = findSalesRegion(lead.location);
+  const assignee = region ?? FALLBACK_ASSIGNEE;
+  const regionText = region
+    ? `región ${region.region}`
+    : "región no reconocida, asignar manualmente";
+
+  // Nombre como en el tablero: "NOMBRE / EMPRESA"
+  const itemName = [lead.name, lead.company]
+    .map((s) => s?.trim())
+    .filter(Boolean)
+    .join(" / ")
+    .toUpperCase()
+    .slice(0, 250);
+
+  const base: Record<string, unknown> = {
+    [COL.status]: { label: STATUS_NEW },
+    [COL.source]: { label: SOURCE_WEB },
+    [COL.seller]: {
+      personsAndTeams: [{ id: assignee.mondayUserId, kind: "person" }],
+    },
+    [COL.comments]: { text: buildComments(lead, regionText) },
+  };
+  if (lead.company?.trim()) base[COL.company] = lead.company.trim();
+  if (lead.project_name?.trim()) base[COL.project] = lead.project_name.trim();
+
+  // Correo y teléfono van aparte: si Monday rechazara su formato, el lead se
+  // crea igual sin ellos (ya vienen en Comments).
+  const contact: Record<string, unknown> = {
+    [COL.email]: { email: lead.email, text: lead.email },
+  };
+  const phone = lead.phone ? phoneValue(lead.phone) : null;
+  if (phone) contact[COL.phone] = phone;
+
+  const create = `
+    mutation ($board: ID!, $group: String!, $name: String!, $values: JSON!) {
+      create_item(board_id: $board, group_id: $group, item_name: $name,
+                  column_values: $values, create_labels_if_missing: true) { id }
+    }`;
+
+  try {
+    let itemId: string;
+    try {
+      const data = await mondayRequest<{ create_item: { id: string } }>(token, create, {
+        board: boardId,
+        group: GROUP_NEW_LEADS,
+        name: itemName,
+        values: JSON.stringify({ ...base, ...contact }),
+      });
+      itemId = data.create_item.id;
+    } catch (firstError) {
+      console.warn("[monday] Reintento sin correo/teléfono:", firstError);
+      const data = await mondayRequest<{ create_item: { id: string } }>(token, create, {
+        board: boardId,
+        group: GROUP_NEW_LEADS,
+        name: itemName,
+        values: JSON.stringify(base),
+      });
+      itemId = data.create_item.id;
     }
 
-    return { success: true, itemId: result.data?.create_item?.id };
-  } catch (error) {
-    console.error("Error al conectar con Monday:", error);
-    return { success: false, error };
+    // Aviso al vendedor (campana de Monday). Si falla, el lead ya existe.
+    try {
+      const text = region
+        ? `Nuevo lead del sitio web (${region.region}): ${itemName} · ${lead.location}`
+        : `Nuevo lead del sitio web SIN REGIÓN (${lead.location}): ${itemName}. Asígnalo al vendedor que corresponda.`;
+      await mondayRequest(
+        token,
+        `mutation ($user: ID!, $target: ID!, $text: String!) {
+           create_notification(user_id: $user, target_id: $target, text: $text,
+                               target_type: Project) { text }
+         }`,
+        { user: assignee.mondayUserId, target: itemId, text },
+      );
+    } catch (err) {
+      console.error("[monday] Lead creado pero no se pudo notificar:", err);
+    }
+
+    return {
+      ok: true,
+      itemId,
+      seller: assignee.seller,
+      region: region?.region ?? null,
+    };
+  } catch (err) {
+    const msg =
+      err instanceof Error && err.name === "AbortError"
+        ? "Monday no respondió a tiempo."
+        : err instanceof Error
+          ? err.message
+          : String(err);
+    return { ok: false, error: msg.slice(0, 300) };
   }
 }

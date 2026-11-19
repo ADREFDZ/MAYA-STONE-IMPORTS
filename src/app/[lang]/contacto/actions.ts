@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { getDictionary } from "@/app/dictionaries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CRM_CLIENT_TYPES, syncLeadToCrm } from "@/lib/crm/webLeads";
+import { syncLeadToMonday } from "@/lib/monday/syncLead";
 
 // =============================================================================
 // PROTECCIÓN ANTI-SPAM
@@ -190,7 +191,17 @@ export async function submitContactAction(formData: FormData) {
       }
     }
 
-    await syncLeadToCrm(saved.id, {
+    const reasonLabel =
+      (es.reason_options as Record<string, string>)[contact_reason] ||
+      contact_reason;
+    const timeLabel = preferred_time
+      ? (es.time_options as Record<string, string>)[preferred_time] ||
+        preferred_time
+      : null;
+
+    // CRM de MAYA y Monday en paralelo: si uno falla, el otro sigue.
+    await Promise.allSettled([
+      syncLeadToCrm(saved.id, {
       web_lead_id: saved.id,
       name,
       company: company || null,
@@ -212,7 +223,26 @@ export async function submitContactAction(formData: FormData) {
         : null,
       message: project_details || null,
       lang,
-    });
+      }),
+      syncLeadToMonday(saved.id, {
+        name,
+        email,
+        phone: phone || null,
+        company: company || null,
+        project_name: project_name || null,
+        location,
+        client_type_label:
+          (es.profile_options as Record<string, string>)[profile_type] ||
+          profile_type,
+        reason_label: reasonLabel,
+        interest_label: interestLabel,
+        material_interest: material_interest || null,
+        preferred_date: preferred_date || null,
+        preferred_time_label: timeLabel,
+        message: project_details || null,
+        lang,
+      }),
+    ]);
   } catch (err) {
     console.error("[crm] Error inesperado al enviar el lead:", err);
   }
