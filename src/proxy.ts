@@ -319,6 +319,7 @@ export const config = {
     // Excluye estáticos y archivos de metadatos (robots, sitemap, iconos, manifest)
     // para que el proxy no los reescriba a /[lang]/... y respondan 404.
     // ffmpeg/ = worker del compresor de video del admin (archivos .js/.wasm).
-    "/((?!_next/static|_next/image|ffmpeg/|favicon.ico|icon.png|apple-icon.png|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm|ogg|mov|m4v|avi|wav|pdf|otf|ttf|woff|woff2|xml|txt|webmanifest|js|mjs|wasm)$).*)",
+    // .html = archivos de verificación de dominio (Meta, Google) en /public.
+    "/((?!_next/static|_next/image|ffmpeg/|favicon.ico|icon.png|apple-icon.png|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm|ogg|mov|m4v|avi|wav|pdf|otf|ttf|woff|woff2|xml|txt|webmanifest|js|mjs|wasm|html)$).*)",
   ],
 };

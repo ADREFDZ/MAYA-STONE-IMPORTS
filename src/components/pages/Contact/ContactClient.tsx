@@ -207,9 +207,15 @@ export default function ContactClient({
     const res = await submitContactAction(formData);
 
     if (res.success) {
+      // Parámetros para Meta / GA4 / Vercel (motivo y colección van primero:
+      // Vercel Analytics solo guarda los 2 primeros).
+      const value = (key: string) => String(formData.get(key) || "").trim();
+      const coleccion = value("category_interest");
       track("lead", {
-        reason: String(formData.get("contact_reason") || ""),
-        client_type: String(formData.get("profile_type") || ""),
+        motivo: value("contact_reason"),
+        coleccion: coleccion && coleccion !== "placeholder" ? coleccion : undefined,
+        material: value("material_interest") || undefined,
+        tipo_cliente: value("profile_type"),
       });
       setSubmitted(true);
     } else {
