@@ -107,6 +107,9 @@ function startDownload() {
   const a = document.createElement("a");
   a.href = NOVEMBER_PROMO.pdfUrl;
   a.download = NOVEMBER_PROMO.pdfFileName;
+  // Lo cuentan el medidor de eventos y el contador del admin (clic delegado)
+  a.dataset.catalog = NOVEMBER_PROMO.id;
+  a.dataset.catalogSource = "promocion";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -246,7 +249,6 @@ export default function PromoNovemberPopup({ lang, dict, whatsappNumber }: Props
       return;
     }
     track("newsletter_signup", { source: NOVEMBER_PROMO.subscriberSource });
-    track("catalog_download", { catalog: NOVEMBER_PROMO.id });
     writeStored("downloaded", 365);
     setDone(true);
     startDownload();
@@ -441,6 +443,8 @@ export default function PromoNovemberPopup({ lang, dict, whatsappNumber }: Props
                   <a
                     href={NOVEMBER_PROMO.pdfUrl}
                     download={NOVEMBER_PROMO.pdfFileName}
+                    data-catalog={NOVEMBER_PROMO.id}
+                    data-catalog-source="promocion"
                     className="mt-2 self-start text-maya-small text-text-secondary underline underline-offset-4 hover:text-text-primary"
                   >
                     {dict.success_retry}

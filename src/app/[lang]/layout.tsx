@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import CookieConsentBanner from "@/components/ui/CookieConsentBanner";
 import CatalogPopup from "@/components/ui/CatalogPopup";
 import PromoNovemberPopup from "@/components/ui/PromoNovemberPopup";
+import CatalogDownloadCounter from "@/components/analytics/CatalogDownloadCounter";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getCatalogLinks } from "@/lib/data/public";
@@ -152,6 +153,8 @@ export default async function LangLayout({
           dict={dict.promo_november}
           whatsappNumber={dict.contact.cards.whatsapp_number}
         />
+        {/* Conteo anónimo de descargas de catálogos (dashboard del admin) */}
+        <CatalogDownloadCounter lang={lang} />
         {/* Vercel: visitas (sin cookies) y velocidad real de carga */}
         <VercelAnalytics />
         <SpeedInsights />

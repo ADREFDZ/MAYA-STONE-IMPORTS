@@ -5,7 +5,9 @@ import { getInventorySummary } from "../inventory/actions";
 import {
   CLIENT_TYPE_LABELS,
   REASON_LABELS,
+  SUBSCRIBER_SOURCE_LABELS,
   getDashboardData,
+  type CatalogRow,
   type CountItem,
 } from "./data";
 
@@ -107,8 +109,12 @@ function BarList({ items, empty }: { items: CountItem[]; empty: string }) {
 /** Leads por semana: columnas con valor al pasar el cursor + tabla accesible */
 function WeeklyBars({
   weeks,
+  unit = ["lead", "leads"],
+  caption = "Leads por semana",
 }: {
   weeks: { label: string; count: number; current: boolean }[];
+  unit?: [string, string];
+  caption?: string;
 }) {
   const max = Math.max(...weeks.map((w) => w.count), 1);
   return (
@@ -123,7 +129,7 @@ function WeeklyBars({
               style={{ height: `${Math.max((w.count / max) * 100, w.count ? 4 : 1)}%` }}
             />
             <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black-neutral text-gray-warm text-[11px] px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              {w.count} {w.count === 1 ? "lead" : "leads"}
+              {w.count} {w.count === 1 ? unit[0] : unit[1]}
             </span>
           </div>
         ))}
@@ -139,7 +145,7 @@ function WeeklyBars({
         Semana que inicia el lunes indicado. Resaltada, la semana actual.
       </figcaption>
       <table className="sr-only">
-        <caption>Leads por semana</caption>
+        <caption>{caption}</caption>
         <tbody>
           {weeks.map((w) => (
             <tr key={w.label}>
@@ -150,6 +156,51 @@ function WeeklyBars({
         </tbody>
       </table>
     </figure>
+  );
+}
+
+/** Catálogos: descargas en 7 / 30 / 90 días, barra sobre 90 días */
+function CatalogTable({ rows }: { rows: CatalogRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <p className="text-maya-small text-text-secondary">
+        Aún no hay descargas registradas. Se cuentan desde que se publicó este
+        contador.
+      </p>
+    );
+  }
+  const max = Math.max(...rows.map((r) => r.d90), 1);
+  return (
+    <table className="w-full text-maya-small">
+      <thead>
+        <tr className="text-[12px] text-text-muted text-left">
+          <th className="font-normal pb-2">Catálogo</th>
+          <th className="font-normal pb-2 text-right w-14">7 días</th>
+          <th className="font-normal pb-2 text-right w-14">30 días</th>
+          <th className="font-normal pb-2 text-right w-14">90 días</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-border-light">
+        {rows.map((r) => (
+          <tr key={r.label}>
+            <td className="py-2.5 pr-3">
+              <span className="block text-black-neutral truncate" title={r.label}>
+                {r.label}
+              </span>
+              <span className="mt-1.5 block h-1.5 bg-black-neutral/10" aria-hidden="true">
+                <span
+                  className="block h-full bg-black-neutral rounded-r-[4px]"
+                  style={{ width: `${(r.d90 / max) * 100}%` }}
+                />
+              </span>
+            </td>
+            <td className="py-2.5 text-right tabular-nums text-text-secondary">{r.d7}</td>
+            <td className="py-2.5 text-right tabular-nums text-text-secondary">{r.d30}</td>
+            <td className="py-2.5 text-right tabular-nums text-black-neutral">{r.d90}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -204,13 +255,18 @@ export default async function DashboardPage({ params }: Props) {
         </header>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
           <Kpi label="Leads · 7 días" value={k.last7} note={trend} href={`/${lang}/admin/leads`} />
           <Kpi label="Leads · 30 días" value={k.last30} note={`${k.totalLeads} en total`} href={`/${lang}/admin/leads`} />
           <Kpi
             label="Suscriptores"
             value={k.subscribers}
             note={`+${k.subscribers30} en 30 días`}
+          />
+          <Kpi
+            label="Catálogos descargados · 30 días"
+            value={d.catalogs.last30}
+            note={`${d.catalogs.last7} en los últimos 7 días`}
           />
           <Kpi
             label="Enviados al CRM · 30 días"
@@ -224,6 +280,29 @@ export default async function DashboardPage({ params }: Props) {
             }
             href={`/${lang}/admin/leads`}
           />
+        </div>
+
+        {/* CATÁLOGOS */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start">
+          <Panel title="Catálogos más descargados" className="lg:col-span-7">
+            <CatalogTable rows={d.catalogs.rows} />
+          </Panel>
+          <div className="lg:col-span-5 space-y-4 md:space-y-6">
+            <Panel title="Descargas por semana">
+              <WeeklyBars
+                weeks={d.catalogs.weeks}
+                unit={["descarga", "descargas"]}
+                caption="Descargas de catálogos por semana"
+              />
+            </Panel>
+            <Panel title="Desde dónde se descargan · 90 días">
+              <BarList items={d.catalogs.bySource} empty="Sin descargas todavía." />
+              <p className="text-[11px] text-text-muted leading-relaxed">
+                Conteo propio y anónimo: incluye a quien no aceptó cookies, por
+                eso puede ser mayor que lo que ves en Meta.
+              </p>
+            </Panel>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start">
@@ -290,27 +369,55 @@ export default async function DashboardPage({ params }: Props) {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start">
           <Panel
-            title="Suscriptores de catálogos"
+            title="Suscriptores"
             className="lg:col-span-5"
             action={<ExportSubscribersButton />}
           >
-            {d.recentSubscribers.length === 0 ? (
-              <p className="text-maya-small text-text-secondary">
-                Aún no hay registros del aviso de catálogos.
-              </p>
-            ) : (
-              <ul className="divide-y divide-border-light -my-2">
-                {d.recentSubscribers.map((s) => (
-                  <li key={s.email} className="py-2.5 flex items-center justify-between gap-3 text-maya-small">
-                    <span className="truncate">{s.email}</span>
-                    <span className="text-[12px] text-text-muted shrink-0">
-                      {s.collection_slug ? `${s.collection_slug} — ` : ""}
-                      {fmtDate(s.created_at)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-[12px] text-text-muted">Activos</p>
+                <p className="text-xl font-light tabular-nums">{k.subscribers}</p>
+              </div>
+              <div>
+                <p className="text-[12px] text-text-muted">7 días</p>
+                <p className="text-xl font-light tabular-nums">+{d.subscribers.last7}</p>
+              </div>
+              <div>
+                <p className="text-[12px] text-text-muted">30 días</p>
+                <p className="text-xl font-light tabular-nums">+{k.subscribers30}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <p className="text-[12px] text-text-muted">Dónde se registraron</p>
+              <BarList items={d.subscribers.bySource} empty="Sin registros todavía." />
+            </div>
+            <div className="space-y-2.5">
+              <p className="text-[12px] text-text-muted">Colección o catálogo de interés</p>
+              <BarList items={d.subscribers.byInterest} empty="Sin registros todavía." />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[12px] text-text-muted">Últimos registros</p>
+              {d.recentSubscribers.length === 0 ? (
+                <p className="text-maya-small text-text-secondary">
+                  Aún no hay registros.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border-light border-y border-border-light">
+                  {d.recentSubscribers.map((s) => (
+                    <li key={s.email} className="py-2.5 flex items-center justify-between gap-3 text-maya-small">
+                      <span className="truncate">{s.email}</span>
+                      <span className="text-[12px] text-text-muted shrink-0 text-right">
+                        {SUBSCRIBER_SOURCE_LABELS[s.source] || s.source || ""}
+                        {" — "}
+                        {fmtDate(s.created_at)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </Panel>
 
           <Panel title="Pendientes de contenido" className="lg:col-span-7">

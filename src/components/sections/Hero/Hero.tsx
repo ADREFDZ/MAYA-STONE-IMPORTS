@@ -137,7 +137,7 @@ export default function Hero({ dict, lang = "es" }: HeroProps) {
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full h-[200vh] sm:h-[300vh] bg-black-neutral"
+      className="relative w-full h-[180vh] sm:h-[260vh] bg-black-neutral"
     >
       <section
         ref={containerRef}

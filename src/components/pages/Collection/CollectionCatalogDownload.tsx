@@ -6,6 +6,8 @@ import CollectionLogoTitle from "./CollectionLogoTitle";
 interface CollectionCatalogDownloadProps {
   /** PDF subido desde el admin para esta colección. */
   url?: string | null;
+  /** slug de la colección (para contar descargas en el admin) */
+  collectionSlug?: string;
   collectionTitle: string;
   logoUrl?: string | null;
   coverImage?: string | null;
@@ -34,6 +36,7 @@ function buildDownloadUrl(url: string, fileName: string) {
  */
 export default function CollectionCatalogDownload({
   url,
+  collectionSlug,
   collectionTitle,
   logoUrl,
   coverImage,
@@ -171,6 +174,8 @@ export default function CollectionCatalogDownload({
             <a
               href={buildDownloadUrl(url, fileName)}
               download={fileName}
+              data-catalog={collectionSlug || slugify(collectionTitle || "")}
+              data-catalog-source="coleccion"
               target="_blank"
               rel="noopener noreferrer"
               className={`${buttonClass} hover:gap-6`}

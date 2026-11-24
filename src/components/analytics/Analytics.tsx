@@ -62,6 +62,12 @@ export default function Analytics({ gaId, clarityId }: AnalyticsProps) {
       const page = window.location.pathname;
       if (explicit) track(explicit, { label, page });
       else if (href.includes("wa.me/")) track("whatsapp_click", { page });
+      else if (el.dataset.catalog)
+        track("catalog_download", {
+          catalogo: el.dataset.catalog,
+          origen: el.dataset.catalogSource,
+          page,
+        });
       else if (el.hasAttribute("download") || /\.pdf(\?|$)/i.test(href))
         track("catalog_download", { label, page });
     };

@@ -344,6 +344,8 @@ export default function CatalogPopup({
                   <li key={c.slug}>
                     <a
                       href={downloadUrl(c.catalog_url || "", `MAYA-${c.slug}-catalogo.pdf`)}
+                      data-catalog={c.slug}
+                      data-catalog-source="aviso_catalogos"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between py-2.5 text-maya-small uppercase tracking-wide hover:text-accent-ink transition-colors"

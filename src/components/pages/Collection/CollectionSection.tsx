@@ -364,6 +364,7 @@ export default function CollectionSection({
       {/* SECCIÓN 5: CATÁLOGO DIGITAL DESCARGABLE */}
       <CollectionCatalogDownload
         url={collection.catalog_url}
+        collectionSlug={collectionSlug}
         collectionTitle={title || ""}
         logoUrl={collection.logo_url}
         coverImage={collection.cover_image}
