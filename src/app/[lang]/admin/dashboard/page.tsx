@@ -282,6 +282,29 @@ export default async function DashboardPage({ params }: Props) {
           />
         </div>
 
+        {/* CAMPAÑAS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+          <Panel title="Origen de los leads · 90 días">
+            <BarList items={d.campaigns.bySource} empty="Sin leads todavía." />
+            <p className="text-[11px] text-text-muted">
+              {d.campaigns.withCampaign} de {d.campaigns.total} leads llegaron desde
+              un enlace con campaña (UTM).
+            </p>
+          </Panel>
+          <Panel title="Leads por campaña">
+            <BarList
+              items={d.campaigns.byCampaign}
+              empty="Aparecen cuando llegan leads desde enlaces con utm_campaign."
+            />
+          </Panel>
+          <Panel title="Leads por anuncio">
+            <BarList
+              items={d.campaigns.byAd}
+              empty="Aparecen cuando llegan leads desde enlaces con utm_content."
+            />
+          </Panel>
+        </div>
+
         {/* CATÁLOGOS */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start">
           <Panel title="Catálogos más descargados" className="lg:col-span-7">

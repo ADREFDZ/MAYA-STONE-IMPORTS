@@ -10,6 +10,7 @@ import CookieConsentBanner from "@/components/ui/CookieConsentBanner";
 import CatalogPopup from "@/components/ui/CatalogPopup";
 import PromoNovemberPopup from "@/components/ui/PromoNovemberPopup";
 import CatalogDownloadCounter from "@/components/analytics/CatalogDownloadCounter";
+import AttributionCapture from "@/components/analytics/AttributionCapture";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getCatalogLinks } from "@/lib/data/public";
@@ -153,6 +154,10 @@ export default async function LangLayout({
           dict={dict.promo_november}
           whatsappNumber={dict.contact.cards.whatsapp_number}
         />
+        {/* Origen de campaña (UTM / fbclid) para ligarlo a los leads */}
+        <Suspense fallback={null}>
+          <AttributionCapture />
+        </Suspense>
         {/* Conteo anónimo de descargas de catálogos (dashboard del admin) */}
         <CatalogDownloadCounter lang={lang} />
         {/* Vercel: visitas (sin cookies) y velocidad real de carga */}

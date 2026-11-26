@@ -24,6 +24,33 @@ export interface ContactLead {
   message?: string;
   status: "nuevo" | "en_seguimiento" | "atendido" | "descartado";
   created_at: string;
+  // Origen de campaña (UTM) y envío a Meta
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_content?: string | null;
+  utm_term?: string | null;
+  fbclid?: string | null;
+  landing_page?: string | null;
+  referrer?: string | null;
+  meta_capi_sent_at?: string | null;
+  meta_capi_error?: string | null;
+}
+
+/** Texto corto del origen: "Meta · campaña · anuncio" o "Directo / orgánico" */
+function originSummary(l: ContactLead): string {
+  if (!l.utm_source && !l.utm_campaign && !l.fbclid) {
+    if (l.referrer) {
+      try {
+        return `Referido · ${new URL(l.referrer).hostname.replace(/^www\./, "")}`;
+      } catch {
+        return "Referido";
+      }
+    }
+    return "Directo / orgánico";
+  }
+  const source = l.utm_source || (l.fbclid ? "facebook" : "");
+  return [source, l.utm_campaign, l.utm_content].filter(Boolean).join(" · ");
 }
 
 interface Props {
@@ -432,6 +459,31 @@ export default function LeadsManagerClient({
                           .join(" · ")}
                       </p>
                     )}
+                    {/* ORIGEN DE CAMPAÑA */}
+                    <div className="mt-2 border border-border-light bg-background/50 px-3 py-2 text-[12px] leading-relaxed">
+                      <p>
+                        <span className="text-text-muted">Origen: </span>
+                        <span className="text-black-neutral">{originSummary(selectedLead)}</span>
+                      </p>
+                      {(selectedLead.utm_medium || selectedLead.utm_term || selectedLead.landing_page) && (
+                        <p className="text-text-secondary">
+                          {[
+                            selectedLead.utm_medium && `Medio: ${selectedLead.utm_medium}`,
+                            selectedLead.utm_term && `Término: ${selectedLead.utm_term}`,
+                            selectedLead.landing_page && `Entró por: ${selectedLead.landing_page}`,
+                          ]
+                            .filter(Boolean)
+                            .join(" — ")}
+                        </p>
+                      )}
+                      {(selectedLead.meta_capi_sent_at || selectedLead.meta_capi_error) && (
+                        <p className={selectedLead.meta_capi_error ? "text-red-800" : "text-text-secondary"}>
+                          {selectedLead.meta_capi_error
+                            ? `Meta (servidor): no enviado — ${selectedLead.meta_capi_error}`
+                            : "Meta (servidor): enviado"}
+                        </p>
+                      )}
+                    </div>
                     {/* ESTADO EN EL CRM DE MAYA */}
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {selectedLead.crm_lead_code ? (

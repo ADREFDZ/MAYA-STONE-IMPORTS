@@ -5,7 +5,7 @@ import { FALLBACK_ASSIGNEE, findSalesRegion } from "@/lib/monday/regions";
 // -----------------------------------------------------------------------------
 // Cada solicitud del formulario de contacto crea un lead en el grupo
 // "1. LEADS POR CONTACTAR" con:
-//   · Estatus "1. POR CONTACTAR" y Canal de Origen "SITIO WEB"
+//   · Estatus "1. POR CONTACTAR" y Origen "MAYA | SITIO WEB"
 //   · Vendedor según la región de la ubicación (src/lib/monday/regions.ts);
 //     si no se reconoce, Isabel Ayala
 //   · Empresa, Proyecto, Correo, Teléfono y una ficha completa en Comments
@@ -29,8 +29,10 @@ const COL = {
   source: "color_mm6sh70j",
 } as const;
 const GROUP_NEW_LEADS = "group_mm8kxw5g"; // "1. LEADS POR CONTACTAR"
-const STATUS_NEW = "1. POR CONTACTAR";
-const SOURCE_WEB = "SITIO WEB";
+// Se usan los IDs internos de las etiquetas (no el texto): si las renombran
+// en Monday, el envío sigue funcionando y no se crean etiquetas duplicadas.
+const STATUS_NEW_ID = 0; // ESTATUS → "1. POR CONTACTAR"
+const SOURCE_WEB_ID = 153; // ORIGEN → "MAYA | SITIO WEB"
 
 export interface MondayWebLead {
   name: string;
@@ -139,8 +141,8 @@ export async function sendLeadToMonday(
     .slice(0, 250);
 
   const base: Record<string, unknown> = {
-    [COL.status]: { label: STATUS_NEW },
-    [COL.source]: { label: SOURCE_WEB },
+    [COL.status]: { index: STATUS_NEW_ID },
+    [COL.source]: { index: SOURCE_WEB_ID },
     [COL.seller]: {
       personsAndTeams: [{ id: assignee.mondayUserId, kind: "person" }],
     },
@@ -160,7 +162,7 @@ export async function sendLeadToMonday(
   const create = `
     mutation ($board: ID!, $group: String!, $name: String!, $values: JSON!) {
       create_item(board_id: $board, group_id: $group, item_name: $name,
-                  column_values: $values, create_labels_if_missing: true) { id }
+                  column_values: $values) { id }
     }`;
 
   try {

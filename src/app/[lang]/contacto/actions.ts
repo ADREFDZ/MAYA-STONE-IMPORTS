@@ -5,6 +5,7 @@ import { getDictionary } from "@/app/dictionaries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CRM_CLIENT_TYPES, syncLeadToCrm } from "@/lib/crm/webLeads";
 import { syncLeadToMonday } from "@/lib/monday/syncLead";
+import { sendLeadToMeta } from "@/lib/meta/conversions";
 
 // =============================================================================
 // PROTECCIÓN ANTI-SPAM
@@ -110,6 +111,20 @@ export async function submitContactAction(formData: FormData) {
   const preferred_time = field(formData, "preferred_time", MAX.short);
   const project_details = field(formData, "project_details", MAX.message);
 
+  // Origen de campaña (UTM) y datos para la API de Conversiones de Meta
+  const attribution = {
+    utm_source: field(formData, "utm_source", 200) || null,
+    utm_medium: field(formData, "utm_medium", 200) || null,
+    utm_campaign: field(formData, "utm_campaign", 200) || null,
+    utm_content: field(formData, "utm_content", 200) || null,
+    utm_term: field(formData, "utm_term", 200) || null,
+    fbclid: field(formData, "fbclid", 300) || null,
+    landing_page: field(formData, "landing_page", 200) || null,
+    referrer: field(formData, "referrer", 300) || null,
+  };
+  const metaEventId = field(formData, "meta_event_id", 80).replace(/[^\w-]/g, "");
+  const marketingConsent = formData.get("marketing_consent") === "1";
+
   if (
     !name ||
     !email ||
@@ -157,6 +172,8 @@ export async function submitContactAction(formData: FormData) {
         preferred_time: preferred_time || null,
         message: project_details || null,
         status: "nuevo",
+        ...attribution,
+        meta_event_id: metaEventId || null,
       },
     ])
     .select("id")
@@ -245,6 +262,48 @@ export async function submitContactAction(formData: FormData) {
     ]);
   } catch (err) {
     console.error("[crm] Error inesperado al enviar el lead:", err);
+  }
+
+  // --- API de Conversiones de Meta: solo si la persona aceptó cookies.
+  // Mismo event_id que el Pixel del navegador → Meta lo cuenta una vez.
+  if (marketingConsent && metaEventId && process.env.META_CAPI_TOKEN) {
+    try {
+      const result = await sendLeadToMeta({
+        eventId: metaEventId,
+        eventSourceUrl:
+          field(formData, "page_url", 300) ||
+          `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.gpomaya.com"}/contacto`,
+        email,
+        phone: phone || null,
+        name,
+        clientIp: ip !== "unknown" ? ip : null,
+        userAgent: h.get("user-agent"),
+        fbc: field(formData, "fbc", 300) || null,
+        fbp: field(formData, "fbp", 120) || null,
+        customData: {
+          motivo: contact_reason,
+          coleccion:
+            category_interest && category_interest !== "placeholder"
+              ? category_interest
+              : null,
+          material: material_interest || null,
+          tipo_cliente: profile_type,
+          utm_campaign: attribution.utm_campaign,
+          utm_content: attribution.utm_content,
+        },
+      });
+      await supabase
+        .from("contact_leads")
+        .update(
+          result.ok
+            ? { meta_capi_sent_at: new Date().toISOString(), meta_capi_error: null }
+            : { meta_capi_error: result.error },
+        )
+        .eq("id", saved.id);
+      if (!result.ok) console.error("[meta] Lead no enviado a Meta:", result.error);
+    } catch (err) {
+      console.error("[meta] Error inesperado:", err);
+    }
   }
 
   return { success: true };

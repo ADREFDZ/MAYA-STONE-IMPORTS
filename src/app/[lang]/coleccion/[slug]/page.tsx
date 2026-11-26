@@ -6,6 +6,7 @@ import { ROUTES, type Locale } from "@/lib/i18n/routes";
 import CollectionSection from "@/components/pages/Collection/CollectionSection";
 import CollectionCTA from "@/components/pages/Collection/CollectionCTA";
 import CollectionJsonLd from "@/components/seo/CollectionJsonLd";
+import CollectionViewTracker from "@/components/analytics/CollectionViewTracker";
 import Button from "@/components/ui/Button";
 import { fillTemplate } from "@/lib/utils/strings";
 
@@ -275,6 +276,10 @@ export default async function SingleCollectionPage({ params }: Props) {
       className={`collection-surface min-h-screen pt-24 sm:pt-28 selection:bg-accent selection:text-white transition-colors duration-700 overflow-x-clip ${themeClass}`}
     >
       <CollectionJsonLd collection={collection} lang={currentLocale} />
+      <CollectionViewTracker
+        slug={collectionThemeSlug}
+        name={(collection as any).title_es || collection.title || collectionThemeSlug}
+      />
 
       {/* ENLACE DE RETORNO EDITORIAL */}
       <div

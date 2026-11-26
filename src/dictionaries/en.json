@@ -114,7 +114,7 @@
   "privacy_page": {
     "meta": "LEGAL COMPLIANCE & PRIVACY",
     "title": "Comprehensive Privacy Notice",
-    "last_updated": "Last updated: October 19, 2026",
+    "last_updated": "Last updated: November 26, 2026",
     "back_button": "Go back to previous page",
     "sections": [
       {
@@ -123,7 +123,7 @@
       },
       {
         "title": "2. Personal data we collect",
-        "content": "Depending on interaction, we may collect: full name; company, studio, or organization; role or professional profile; email address; phone number; inquiry reason; material or category of interest; project description; preferred visit date and time; and fiscal details (RFC, billing address, tax regime) when required.\nTechnical browsing metrics (IP address, browser, operating system, timestamp, language) and cookie identifiers are also processed as detailed in our [Cookie Policy](/cookie-policy)."
+        "content": "Depending on interaction, we may collect: full name; company, studio, or organization; role or professional profile; email address; phone number; inquiry reason; material or category of interest; project description; preferred visit date and time; and fiscal details (RFC, billing address, tax regime) when required.\nTechnical browsing metrics (IP address, browser, operating system, timestamp, language) and cookie identifiers, as well as the origin of your visit (for example, the campaign or ad you came from, the link's \"utm\" parameters, the ad click identifier, and the page where you entered the site), are also processed as detailed in our [Cookie Policy](/cookie-policy)."
       },
       {
         "title": "3. Sensitive personal data",
@@ -139,7 +139,7 @@
       },
       {
         "title": "6. Secondary purposes (consent required)",
-        "content": "Sending newsletters and emails about new materials, collections, projects, or updates; commercial and promotional communications; event invitations; satisfaction surveys; and statistical analysis to improve our website and services.\nYou may opt out of these purposes at any time, without affecting the handling of your main request, by emailing info@gpomaya.com with the subject \"Opt-out of secondary purposes\". Every promotional email will also include an option to unsubscribe."
+        "content": "Sending newsletters and emails about new materials, collections, projects, or updates; commercial and promotional communications; event invitations; satisfaction surveys; statistical analysis to improve our website and services; and, only if you accept marketing cookies, measuring the results of our ads on Meta platforms (Facebook and Instagram) and showing more relevant advertising, as described in section 9.\nYou may opt out of these purposes at any time, without affecting the handling of your main request, by emailing info@gpomaya.com with the subject \"Opt-out of secondary purposes\". Every promotional email will also include an option to unsubscribe."
       },
       {
         "title": "7. Consent",
@@ -147,11 +147,11 @@
       },
       {
         "title": "8. Technology service providers",
-        "content": "MAYA relies on technology vendors that process data on MAYA's behalf for infrastructure, website hosting, storage, authentication, maps, social media content, measurement, and internal administration, including: Supabase (database, authentication, and files; region us-west-2, United States), the website hosting provider and its metrics tools, Meta (official Instagram API, Meta Pixel, and WhatsApp), Google Maps, and Google Gemini (internal administration). Details for each are available in our [Cookie Policy & Third-Party Technologies](/cookie-policy)."
+        "content": "MAYA relies on technology vendors that process data on MAYA's behalf for infrastructure, website hosting, storage, authentication, maps, social media content, measurement, and internal administration, including: Supabase (database, authentication, and files; region us-west-2, United States), the website hosting provider and its metrics tools, Meta (official Instagram API, Meta Pixel, Conversions API, and WhatsApp), Microsoft Clarity (heatmaps and anonymous session recordings, only with your consent), monday.com (sales follow-up of inquiries), Google Maps, and Google Gemini (internal administration). Details for each are available in our [Cookie Policy & Third-Party Technologies](/cookie-policy)."
       },
       {
         "title": "9. Data transfers",
-        "content": "MAYA may transfer data when necessary to comply with legal obligations, provide the services you requested, respond to requests from competent authorities, or when the transfer is permitted by law without requiring your consent. MAYA does not sell your personal data. Some of our technology vendors host information outside Mexico (for example, in the United States); in those cases they act as processors on MAYA's behalf and processing follows applicable Mexican law."
+        "content": "MAYA may transfer data when necessary to comply with legal obligations, provide the services you requested, respond to requests from competent authorities, or when the transfer is permitted by law without requiring your consent. MAYA does not sell your personal data. Some of our technology vendors host information outside Mexico (for example, in the United States); in those cases they act as processors on MAYA's behalf and processing follows applicable Mexican law.\nAdvertising measurement with Meta: if you accept marketing cookies on our website and submit the contact form, MAYA shares your email address, phone number, and name with Meta Platforms, Inc. in encrypted form (using a one-way SHA-256 hash that prevents them from being read directly), together with technical visit data (IP address, browser, ad click identifiers, and the originating campaign), through Meta's Conversions API. This lets us know which ads generate inquiries and allows Meta to show our advertising to people with similar interests. Meta does not receive the content of your message or your project details, and processes this information under its own privacy policy.\nIf you reject marketing cookies, this data is not shared. You can change your choice at any time from \"Cookie preferences\" in the website footer, or object by emailing info@gpomaya.com with the subject \"Opt-out of secondary purposes\"."
       },
       {
         "title": "10. ARCO Rights",
@@ -195,7 +195,7 @@
       },
       {
         "title": "20. Contact",
-        "content": "MAYA Stone Imports\n• Legal entity: MAYA STONE IMPORTS, S.A. DE C.V.\n• Address: Blvd. Francisco Villa 4602, Warehouse A4, Col. León I, Zip Code 37235, León, Guanajuato, Mexico\n• Email: [info@gpomaya.com](mailto:info@gpomaya.com)\n• Phone & WhatsApp: +52 477 704 0874\n• Website: [gpomaya.com](/)\n• Last updated: October 19, 2026"
+        "content": "MAYA Stone Imports\n• Legal entity: MAYA STONE IMPORTS, S.A. DE C.V.\n• Address: Blvd. Francisco Villa 4602, Warehouse A4, Col. León I, Zip Code 37235, León, Guanajuato, Mexico\n• Email: [info@gpomaya.com](mailto:info@gpomaya.com)\n• Phone & WhatsApp: +52 477 704 0874\n• Website: [gpomaya.com](/)\n• Last updated: November 26, 2026"
       }
     ]
   },

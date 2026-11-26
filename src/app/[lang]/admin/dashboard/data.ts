@@ -113,7 +113,7 @@ export async function getDashboardData() {
     await Promise.all([
       supabase
         .from("contact_leads")
-        .select("created_at, contact_reason, profile_type, location, material_interest, crm_lead_code, crm_error")
+        .select("created_at, contact_reason, profile_type, location, material_interest, crm_lead_code, crm_error, utm_source, utm_campaign, utm_content, fbclid")
         .gte("created_at", since90)
         .order("created_at", { ascending: false }),
       supabase.from("contact_leads").select("id", { count: "exact", head: true }),
@@ -274,6 +274,20 @@ export async function getDashboardData() {
       crmFailed,
     },
     weeks,
+    campaigns: {
+      withCampaign: leads.filter((l) => l.utm_source || l.utm_campaign || l.fbclid).length,
+      total: leads.length,
+      bySource: topCounts(
+        leads.map((l) =>
+          l.utm_source || l.utm_campaign || l.fbclid
+            ? (l.utm_source || (l.fbclid ? "facebook" : "otro")).toLowerCase()
+            : "Directo / orgánico",
+        ),
+        { facebook: "Meta", fb: "Meta", ig: "Meta", instagram: "Meta", meta: "Meta" },
+      ),
+      byCampaign: topCounts(leads.map((l) => l.utm_campaign), undefined, 8),
+      byAd: topCounts(leads.map((l) => l.utm_content), undefined, 8),
+    },
     byReason: topCounts(leads.map((l) => l.contact_reason), REASON_LABELS),
     byClientType: topCounts(leads.map((l) => l.profile_type), CLIENT_TYPE_LABELS),
     topMaterials: topCounts(leads.map((l) => l.material_interest), undefined, 8),

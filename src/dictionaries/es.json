@@ -114,7 +114,7 @@
   "privacy_page": {
     "meta": "CUMPLIMIENTO LEGAL & PRIVACIDAD",
     "title": "Aviso de Privacidad Integral",
-    "last_updated": "Última actualización: 19 de octubre de 2026",
+    "last_updated": "Última actualización: 26 de noviembre de 2026",
     "back_button": "Volver a la página anterior",
     "sections": [
       {
@@ -123,7 +123,7 @@
       },
       {
         "title": "2. Datos personales que recabamos",
-        "content": "Dependiendo de la interacción, podemos recabar: nombre y apellidos; empresa, despacho u organización; puesto, profesión o perfil profesional; correo electrónico; teléfono; motivo de contacto; categoría o material de interés; información de proyecto; preferencias de visita o contacto; fecha y horario preferidos; descripción del proyecto; y, cuando sean necesarios para facturación, datos fiscales como RFC, razón social, régimen fiscal, código postal fiscal y uso de CFDI.\nTambién pueden generarse datos técnicos de navegación (IP, navegador, sistema operativo, dispositivo, fecha y hora de acceso, páginas consultadas, idioma) y datos asociados con cookies, descritos con detalle en nuestra [Política de Cookies y Tecnologías de Terceros](/politica-de-cookies)."
+        "content": "Dependiendo de la interacción, podemos recabar: nombre y apellidos; empresa, despacho u organización; puesto, profesión o perfil profesional; correo electrónico; teléfono; motivo de contacto; categoría o material de interés; información de proyecto; preferencias de visita o contacto; fecha y horario preferidos; descripción del proyecto; y, cuando sean necesarios para facturación, datos fiscales como RFC, razón social, régimen fiscal, código postal fiscal y uso de CFDI.\nTambién pueden generarse datos técnicos de navegación (IP, navegador, sistema operativo, dispositivo, fecha y hora de acceso, páginas consultadas, idioma) y datos asociados con cookies, así como el origen de su visita (por ejemplo, la campaña o el anuncio desde el que llegó, los parámetros \"utm\" del enlace, el identificador de clic de anuncios y la página por la que entró al sitio), descritos con detalle en nuestra [Política de Cookies y Tecnologías de Terceros](/politica-de-cookies)."
       },
       {
         "title": "3. Datos personales sensibles",
@@ -139,7 +139,7 @@
       },
       {
         "title": "6. Finalidades secundarias (requieren su consentimiento)",
-        "content": "Enviarle boletines y correos con información sobre nuevos materiales, colecciones, proyectos o novedades; comunicaciones comerciales y promocionales; invitaciones a eventos; encuestas de satisfacción; y análisis estadísticos para mejorar nuestro sitio y nuestros servicios.\nUsted puede negarse a estas finalidades en cualquier momento, sin que ello afecte la atención de su solicitud principal, enviando un correo a info@gpomaya.com con el asunto \"Negativa a finalidades secundarias\". Cada comunicación promocional por correo incluirá además una opción para dejar de recibirlas."
+        "content": "Enviarle boletines y correos con información sobre nuevos materiales, colecciones, proyectos o novedades; comunicaciones comerciales y promocionales; invitaciones a eventos; encuestas de satisfacción; análisis estadísticos para mejorar nuestro sitio y nuestros servicios; y, únicamente si usted acepta las cookies de marketing, medir los resultados de nuestros anuncios en plataformas de Meta (Facebook e Instagram) y mostrar publicidad más relevante, conforme a la sección 9.\nUsted puede negarse a estas finalidades en cualquier momento, sin que ello afecte la atención de su solicitud principal, enviando un correo a info@gpomaya.com con el asunto \"Negativa a finalidades secundarias\". Cada comunicación promocional por correo incluirá además una opción para dejar de recibirlas."
       },
       {
         "title": "7. Consentimiento",
@@ -147,11 +147,11 @@
       },
       {
         "title": "8. Encargados y proveedores tecnológicos",
-        "content": "MAYA utiliza proveedores tecnológicos que tratan datos por cuenta de MAYA para infraestructura, alojamiento del sitio, almacenamiento, autenticación, mapas, contenido de redes sociales, medición y funciones internas de administración, entre ellos: Supabase (base de datos, autenticación y archivos; región us-west-2, Estados Unidos), el proveedor de alojamiento (hosting) del sitio y sus herramientas de métricas, Meta (API oficial de Instagram, Meta Pixel y WhatsApp), Google Maps y Google Gemini (uso interno de administración). El detalle de cada uno está en nuestra [Política de Cookies y Tecnologías de Terceros](/politica-de-cookies)."
+        "content": "MAYA utiliza proveedores tecnológicos que tratan datos por cuenta de MAYA para infraestructura, alojamiento del sitio, almacenamiento, autenticación, mapas, contenido de redes sociales, medición y funciones internas de administración, entre ellos: Supabase (base de datos, autenticación y archivos; región us-west-2, Estados Unidos), el proveedor de alojamiento (hosting) del sitio y sus herramientas de métricas, Meta (API oficial de Instagram, Meta Pixel, API de Conversiones y WhatsApp), Microsoft Clarity (mapas de calor y grabaciones anónimas de navegación, solo con su consentimiento), monday.com (seguimiento comercial de solicitudes), Google Maps y Google Gemini (uso interno de administración). El detalle de cada uno está en nuestra [Política de Cookies y Tecnologías de Terceros](/politica-de-cookies)."
       },
       {
         "title": "9. Transferencias",
-        "content": "MAYA podrá transferir datos cuando sea necesario para cumplir obligaciones legales, proporcionar los servicios que usted solicitó, atender requerimientos de autoridad competente, o cuando la transferencia esté permitida por la ley sin requerir su consentimiento. MAYA no vende sus datos personales. Algunos de nuestros proveedores tecnológicos alojan información fuera de México (por ejemplo, en Estados Unidos); en esos casos actúan como encargados por cuenta de MAYA y el tratamiento se realiza conforme a la legislación mexicana aplicable."
+        "content": "MAYA podrá transferir datos cuando sea necesario para cumplir obligaciones legales, proporcionar los servicios que usted solicitó, atender requerimientos de autoridad competente, o cuando la transferencia esté permitida por la ley sin requerir su consentimiento. MAYA no vende sus datos personales. Algunos de nuestros proveedores tecnológicos alojan información fuera de México (por ejemplo, en Estados Unidos); en esos casos actúan como encargados por cuenta de MAYA y el tratamiento se realiza conforme a la legislación mexicana aplicable.\nMedición de publicidad con Meta: si usted acepta las cookies de marketing en nuestro sitio y envía el formulario de contacto, MAYA comparte con Meta Platforms, Inc. su correo electrónico, teléfono y nombre de forma cifrada (mediante una función de un solo sentido, SHA-256, que impide leerlos directamente), junto con datos técnicos de la visita (dirección IP, navegador, identificadores de clic de anuncios y la campaña de origen), a través de la API de Conversiones de Meta. Esto nos permite saber qué anuncios generan solicitudes y que Meta muestre nuestra publicidad a personas con intereses similares. Meta no recibe el contenido de su mensaje ni los detalles de su proyecto, y trata esa información conforme a su propia política de privacidad.\nSi usted rechaza las cookies de marketing, este envío no se realiza. Puede cambiar su decisión en cualquier momento desde \"Preferencias de cookies\" en el pie de página del sitio, u oponerse escribiendo a info@gpomaya.com con el asunto \"Negativa a finalidades secundarias\"."
       },
       {
         "title": "10. Derechos ARCO",
@@ -195,7 +195,7 @@
       },
       {
         "title": "20. Contacto",
-        "content": "MAYA Stone Imports\n• Razón social: MAYA STONE IMPORTS, S.A. DE C.V.\n• Domicilio: Blvd. Francisco Villa 4602, Bodega A4, Col. León I, C.P. 37235, León, Guanajuato, México\n• Correo: [info@gpomaya.com](mailto:info@gpomaya.com)\n• Teléfono y WhatsApp: +52 477 704 0874\n• Sitio web: [gpomaya.com](/)\n• Última actualización: 19 de octubre de 2026"
+        "content": "MAYA Stone Imports\n• Razón social: MAYA STONE IMPORTS, S.A. DE C.V.\n• Domicilio: Blvd. Francisco Villa 4602, Bodega A4, Col. León I, C.P. 37235, León, Guanajuato, México\n• Correo: [info@gpomaya.com](mailto:info@gpomaya.com)\n• Teléfono y WhatsApp: +52 477 704 0874\n• Sitio web: [gpomaya.com](/)\n• Última actualización: 26 de noviembre de 2026"
       }
     ]
   },

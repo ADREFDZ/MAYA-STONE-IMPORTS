@@ -6,6 +6,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { submitContactAction } from "@/app/[lang]/contacto/actions";
 import { track } from "@/lib/analytics/track";
+import {
+  UTM_FIELDS,
+  hasMarketingConsent,
+  readAttribution,
+  readCookie,
+} from "@/lib/analytics/attribution";
 import BranchLocations, {
   BranchLocationsDict,
 } from "@/components/contact/BranchLocations";
@@ -204,6 +210,35 @@ export default function ContactClient({
     const formData = new FormData(e.currentTarget);
     formData.set("form_elapsed_ms", String(Date.now() - formStartedAt.current));
     formData.set("lang", currentLocale);
+
+    // Origen de campaña (UTM) guardado al entrar al sitio
+    const attribution = readAttribution();
+    for (const key of UTM_FIELDS) {
+      if (attribution[key]) formData.set(key, attribution[key] as string);
+    }
+    if (attribution.landing_page) formData.set("landing_page", attribution.landing_page);
+    if (attribution.referrer) formData.set("referrer", attribution.referrer);
+
+    // Mismo ID para el Pixel y la API de Conversiones (Meta no lo cuenta doble)
+    const eventId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    formData.set("meta_event_id", eventId);
+    const consent = hasMarketingConsent();
+    formData.set("marketing_consent", consent ? "1" : "0");
+    if (consent) {
+      const fbc =
+        readCookie("_fbc") ||
+        (attribution.fbclid
+          ? `fb.1.${attribution.fbclid_at || Date.now()}.${attribution.fbclid}`
+          : "");
+      if (fbc) formData.set("fbc", fbc);
+      const fbp = readCookie("_fbp");
+      if (fbp) formData.set("fbp", fbp);
+      formData.set("page_url", window.location.href.split("?")[0]);
+    }
+
     const res = await submitContactAction(formData);
 
     if (res.success) {
@@ -216,7 +251,9 @@ export default function ContactClient({
         coleccion: coleccion && coleccion !== "placeholder" ? coleccion : undefined,
         material: value("material_interest") || undefined,
         tipo_cliente: value("profile_type"),
-      });
+        utm_campaign: attribution.utm_campaign,
+        utm_content: attribution.utm_content,
+      }, { eventId });
       setSubmitted(true);
     } else {
       setError(res.error || dict.error_default);
