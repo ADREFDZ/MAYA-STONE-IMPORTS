@@ -361,3 +361,50 @@ html.lang-transition::after {
     visibility: hidden;
   }
 }
+
+/* =========================================
+   ADMIN: estilo unificado (tarjetas suaves)
+   Ajusta de forma global las piezas que usan todas las pantallas del admin
+   (tablas, formularios, modales) para que coincidan con el nuevo menú y el
+   dashboard, sin reescribir cada pantalla. Solo aplica dentro de .admin-ui.
+   ========================================= */
+.admin-ui {
+  /* Etiquetas y datos con la tipografía de la marca (antes monoespaciada) */
+  & .font-mono {
+    font-family: var(--font-sans);
+    letter-spacing: 0.02em;
+  }
+  & .tracking-data,
+  & .tracking-nav,
+  & .tracking-editorial {
+    letter-spacing: 0.03em;
+  }
+  /* Esquinas más suaves */
+  & .rounded-3xs {
+    border-radius: 10px;
+  }
+  & .rounded-2xs {
+    border-radius: 16px;
+  }
+  /* Paneles: superficie clara translúcida con sombra difusa */
+  & main .bg-surface {
+    background-color: rgb(255 255 255 / 0.5);
+  }
+  & main .bg-surface.border,
+  & main .bg-surface[class*="border-"] {
+    border-color: rgb(255 255 255 / 0.75);
+  }
+  & main section.bg-surface,
+  & main div.bg-surface.border {
+    border-radius: 20px;
+    box-shadow:
+      0 1px 2px rgb(37 37 37 / 0.05),
+      0 18px 40px -24px rgb(37 37 37 / 0.35);
+  }
+  /* Campos de formulario un poco más claros */
+  & input.bg-accent-soft,
+  & select.bg-accent-soft,
+  & textarea.bg-accent-soft {
+    background-color: rgb(255 255 255 / 0.65);
+  }
+}

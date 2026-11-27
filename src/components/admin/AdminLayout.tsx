@@ -81,239 +81,185 @@ export default function AdminLayout({
     router.push(loginUrl);
   };
 
-  const navItems = [
-    { num: "01", label: "Dashboard", href: `/${lang}/admin/dashboard` },
+  // Menú agrupado (iconos de trazo fino)
+  const navGroups: {
+    title: string;
+    items: { label: string; href: string; icon: string }[];
+  }[] = [
     {
-      num: "02",
-      label: "Inventario & Stock",
-      href: `/${lang}/admin/inventory`,
+      title: "General",
+      items: [
+        { label: "Resumen", href: `/${lang}/admin/dashboard`, icon: "M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 7h6V4h-6z" },
+        { label: "Solicitudes", href: `/${lang}/admin/leads`, icon: "M4 6h16v12H4zM4 7l8 6 8-6" },
+      ],
     },
     {
-      num: "03",
-      label: "Colecciones Curadas",
-      href: `/${lang}/admin/colecciones`,
+      title: "Catálogo",
+      items: [
+        { label: "Inventario", href: `/${lang}/admin/inventory`, icon: "M4 7l8-4 8 4-8 4zM4 7v10l8 4 8-4V7M12 11v10" },
+        { label: "Colecciones", href: `/${lang}/admin/colecciones`, icon: "M5 4h14v16H5zM9 4v16" },
+        { label: "Proyectos", href: `/${lang}/admin/projects`, icon: "M3 21h18M5 21V8l7-5 7 5v13M10 21v-6h4v6" },
+        { label: "Galería", href: `/${lang}/admin/gallery`, icon: "M4 5h16v14H4zM4 15l5-5 4 4 3-3 4 4M15 9h.01" },
+      ],
     },
     {
-      num: "04",
-      label: "Proyectos & Arquitectura",
-      href: `/${lang}/admin/projects`,
+      title: "Ajustes",
+      items: [
+        { label: "Usuarios", href: `/${lang}/admin/users`, icon: "M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM3 20a6 6 0 0112 0M16 4.5a3.5 3.5 0 010 6.5M21 20a6 6 0 00-4-5.6" },
+      ],
     },
-    { num: "05", label: "Gestión de Usuarios", href: `/${lang}/admin/users` },
-    { num: "06", label: "Solicitudes B2B", href: `/${lang}/admin/leads` },
-    { num: "07", label: "Galería Editorial", href: `/${lang}/admin/gallery` },
   ];
+  const allItems = navGroups.flatMap((g) => g.items);
+  const current = allItems.find((i) => pathname === i.href || pathname.startsWith(`${i.href}/`));
 
   const userInitial = userName ? userName.charAt(0).toUpperCase() : "A";
 
-  return (
-    <div className="min-h-screen bg-background text-black-neutral flex flex-col lg:flex-row font-sans selection:bg-accent selection:text-white">
-      {/* ─── SIDEBAR ESCRITORIO ─── */}
-      <aside className="hidden lg:flex w-72 border-r border-border-light bg-surface p-6 md:p-8 flex-col justify-between shrink-0 sticky top-0 h-screen z-30">
-        <div className="space-y-10">
-          <div className="space-y-2 border-b border-border-light pb-6">
-            <span className="font-mono text-maya-label uppercase tracking-data text-accent-ink font-semibold block">
-              MAYA STONE IMPORT
-            </span>
-            <h1 className="font-sans font-light text-maya-small tracking-editorial text-black-neutral uppercase">
-              PANEL DE CONTROL
-            </h1>
-          </div>
+  const NavIcon = ({ d }: { d: string }) => (
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+      <path d={d} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 
-          <nav className="space-y-1.5">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`group flex items-center justify-between px-3.5 py-3 font-mono text-maya-label uppercase tracking-data transition-all duration-300 border-l-2 rounded-r-3xs ${
-                    isActive
-                      ? "border-accent bg-accent-soft text-black-neutral font-bold shadow-2xs"
-                      : "border-transparent text-black-neutral/60 hover:text-black-neutral hover:bg-accent-soft/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`text-[10px] font-mono ${
-                        isActive
-                          ? "text-accent-ink"
-                          : "text-black-neutral/40 group-hover:text-black-neutral/70"
+  /** Contenido del menú (se usa en escritorio y en el cajón móvil) */
+  const sidebarContent = (
+    <div className="h-full flex flex-col">
+      {/* Marca */}
+      <div className="px-3 pt-2 pb-7">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/MAYA_LOGOTIPO.png" alt="MAYA" className="h-[14px] w-auto" />
+        <p className="mt-2 text-[11px] text-text-muted">Panel de administración</p>
+      </div>
+
+      {/* Navegación */}
+      <nav className="flex-1 overflow-y-auto space-y-6 pr-1" aria-label="Administración">
+        {navGroups.map((group) => (
+          <div key={group.title}>
+            <p className="px-3 mb-2 text-[11px] text-text-muted">{group.title}</p>
+            <ul className="space-y-1">
+              {group.items.map((item) => {
+                const active = current?.href === item.href;
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex items-center gap-3 rounded-[14px] px-3 py-2.5 text-[14px] transition-colors ${
+                        active
+                          ? "bg-black-neutral text-gray-warm shadow-[0_8px_20px_-12px_rgba(37,37,37,0.7)]"
+                          : "text-black-neutral/70 hover:text-black-neutral hover:bg-white/70"
                       }`}
                     >
-                      {item.num}.
-                    </span>
-                    <span>{item.label}</span>
-                  </div>
-                  <span
-                    className={`text-xs transition-transform duration-300 ${
-                      isActive
-                        ? "text-accent-ink translate-x-0.5"
-                        : "opacity-0 group-hover:opacity-100 text-black-neutral/40"
-                    }`}
-                  >
-                    →
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+                      <NavIcon d={item.icon} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
 
-        <div className="pt-6 border-t border-border-light">
-          <Link
-            href={`/${lang}`}
-            target="_blank"
-            className="flex items-center justify-between font-mono text-maya-label uppercase tracking-data text-black-neutral/50 hover:text-black-neutral transition-colors px-1"
+      {/* Sitio público + usuario */}
+      <div className="pt-4 space-y-3">
+        <Link
+          href={`/${lang}`}
+          target="_blank"
+          className="flex items-center justify-between rounded-[14px] px-3 py-2.5 text-[13px] text-black-neutral/70 hover:text-black-neutral hover:bg-white/70 transition-colors"
+        >
+          <span className="flex items-center gap-3">
+            <NavIcon d="M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" />
+            Ver sitio web
+          </span>
+          <span aria-hidden="true">↗</span>
+        </Link>
+
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            aria-expanded={isMenuOpen}
+            className="w-full flex items-center gap-3 rounded-[16px] bg-white/70 border border-white px-2.5 py-2.5 text-left hover:bg-white transition-colors cursor-pointer"
           >
-            <span>Sitio Público MAYA</span>
-            <span>↗</span>
-          </Link>
+            <span className="h-9 w-9 rounded-full bg-black-neutral text-gray-warm flex items-center justify-center text-[13px] shrink-0">
+              {userInitial}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] text-black-neutral truncate">{userName || "Administrador"}</span>
+              <span className="block text-[11px] text-text-muted truncate">{userEmail || "Admin"}</span>
+            </span>
+            <svg viewBox="0 0 24 24" className={`h-4 w-4 text-text-muted transition-transform ${isMenuOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
+              <path d="M6 15l6-6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 rounded-[16px] bg-white border border-black-neutral/10 shadow-xl p-2 z-50">
+              <p className="px-3 pt-1.5 pb-2 text-[11px] text-text-muted">Rol: administrador</p>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-between rounded-[10px] px-3 py-2 text-[13px] text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
+              >
+                <span>Cerrar sesión</span>
+                <NavIcon d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="admin-ui min-h-screen bg-background text-black-neutral font-sans selection:bg-accent selection:text-white lg:flex">
+      {/* ─── SIDEBAR ESCRITORIO ─── */}
+      <aside className="hidden lg:block w-[264px] shrink-0 sticky top-0 h-screen p-4">
+        <div className="h-full rounded-[24px] bg-white/45 border border-white/70 backdrop-blur-sm shadow-[0_1px_2px_rgba(37,37,37,0.05),0_18px_40px_-24px_rgba(37,37,37,0.35)] p-4">
+          {sidebarContent}
         </div>
       </aside>
 
-      {/* ─── SIDEBAR / DRAWER MÓVIL ─── */}
+      {/* ─── BARRA SUPERIOR MÓVIL ─── */}
+      <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 px-4 h-14 bg-background/90 backdrop-blur-md border-b border-black-neutral/10">
+        <button
+          type="button"
+          onClick={() => setIsMobileNavOpen(true)}
+          className="h-9 w-9 rounded-full bg-white/70 border border-black-neutral/10 flex items-center justify-center cursor-pointer"
+          aria-label="Abrir menú"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+          </svg>
+        </button>
+        <span className="text-[14px] truncate">{current?.label || "Administración"}</span>
+        <span className="h-9 w-9 rounded-full bg-black-neutral text-gray-warm flex items-center justify-center text-[13px]">
+          {userInitial}
+        </span>
+      </header>
+
+      {/* ─── CAJÓN MÓVIL ─── */}
       {isMobileNavOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div
-            className="fixed inset-0 bg-black-pure/60 backdrop-blur-xs"
-            onClick={() => setIsMobileNavOpen(false)}
-          />
-          <div className="relative w-4/5 max-w-xs bg-surface h-full p-6 flex flex-col justify-between shadow-2xl z-10">
-            <div className="space-y-8">
-              <div className="flex items-center justify-between border-b border-border-light pb-4">
-                <div>
-                  <span className="font-mono text-maya-label uppercase tracking-data text-accent-ink font-semibold block">
-                    MAYA STONE IMPORT
-                  </span>
-                  <span className="font-mono text-maya-small font-medium uppercase tracking-wider text-black-neutral">
-                    PANEL DE CONTROL
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileNavOpen(false)}
-                  className="p-1 font-mono text-sm text-black-neutral/50 hover:text-black-neutral cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <nav className="space-y-1.5">
-                {navItems.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center justify-between px-3 py-2.5 font-mono text-maya-label uppercase tracking-data border-l-2 rounded-r-3xs ${
-                        isActive
-                          ? "border-accent bg-accent-soft text-black-neutral font-bold"
-                          : "border-transparent text-black-neutral/60"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-mono text-accent-ink">
-                          {item.num}.
-                        </span>
-                        <span>{item.label}</span>
-                      </div>
-                      <span>→</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-
-            <div className="pt-4 border-t border-border-light">
-              <Link
-                href={`/${lang}`}
-                target="_blank"
-                className="font-mono text-maya-label uppercase text-black-neutral/50 flex justify-between"
-              >
-                <span>Ir a la web pública</span>
-                <span>↗</span>
-              </Link>
-            </div>
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black-pure/50 backdrop-blur-xs" onClick={() => setIsMobileNavOpen(false)} />
+          <div className="absolute inset-y-3 left-3 w-[280px] max-w-[85vw] rounded-[24px] bg-background shadow-2xl p-4">
+            <button
+              type="button"
+              onClick={() => setIsMobileNavOpen(false)}
+              className="absolute top-4 right-4 h-8 w-8 rounded-full flex items-center justify-center text-text-secondary hover:text-black-neutral cursor-pointer z-10"
+              aria-label="Cerrar menú"
+            >
+              ✕
+            </button>
+            {sidebarContent}
           </div>
         </div>
       )}
 
-      {/* ─── ÁREA DE CONTENIDO PRINCIPAL ─── */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-border-light bg-surface/90 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
-          <div className="flex items-center gap-3">
-            {/* Botón Hamburguesa Móvil */}
-            <button
-              type="button"
-              onClick={() => setIsMobileNavOpen(true)}
-              className="lg:hidden p-2 text-black-neutral/70 hover:text-black-neutral border border-border-light rounded-2xs cursor-pointer bg-surface"
-              aria-label="Abrir menú de navegación"
-            >
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
-              </svg>
-            </button>
-
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
-              <span className="font-mono text-maya-label uppercase tracking-data text-black-neutral/60 truncate">
-                SESIÓN ACTIVA
-              </span>
-            </div>
-          </div>
-
-          {/* Menú Desplegable de Usuario */}
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="flex items-center gap-2.5 p-1 sm:p-1.5 rounded-full hover:bg-accent-soft/50 transition-colors border border-border-light cursor-pointer bg-surface"
-            >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black-neutral text-gray-warm flex items-center justify-center font-mono text-xs font-medium">
-                {userInitial}
-              </div>
-              <span className="font-mono text-maya-small text-black-neutral/80 hidden sm:inline-block pr-2 truncate max-w-[140px]">
-                {userName || userEmail || "Admin"}
-              </span>
-            </button>
-
-            {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-surface border border-border-light shadow-2xl p-4 space-y-4 z-50 rounded-2xs">
-                <div className="border-b border-border-light pb-3">
-                  <span className="font-mono text-maya-label uppercase tracking-data text-accent-ink font-semibold block">
-                    CUENTA ACTIVA
-                  </span>
-                  <p className="font-mono text-maya-small text-black-neutral font-medium truncate mt-0.5">
-                    {userName || "Administrador"}
-                  </p>
-                  {userEmail && (
-                    <p className="font-mono text-[10px] text-black-neutral/50 truncate">
-                      {userEmail}
-                    </p>
-                  )}
-                  <span className="inline-block mt-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono text-[9px] uppercase font-bold rounded-3xs">
-                    ROL: ADMINISTRADOR
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-between px-2 py-1.5 font-mono text-maya-label uppercase tracking-data text-red-600 hover:bg-red-50/50 transition-colors text-left cursor-pointer rounded-3xs"
-                >
-                  <span>Cerrar Sesión</span>
-                  <span>✕</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* Contenedor principal */}
-        <main className="flex-1 p-4 sm:p-8 lg:p-10 overflow-y-auto max-w-7xl w-full mx-auto">
-          {children}
-        </main>
-      </div>
+      {/* ─── CONTENIDO ─── */}
+      <main className="flex-1 min-w-0 px-4 py-5 sm:px-6 sm:py-6 lg:pl-2 lg:pr-6 lg:py-4">
+        <div className="max-w-[1320px] mx-auto">{children}</div>
+      </main>
     </div>
   );
 }

@@ -119,9 +119,9 @@ export async function getDashboardData() {
       supabase.from("contact_leads").select("id", { count: "exact", head: true }),
       supabase
         .from("contact_leads")
-        .select("id, name, company, location, contact_reason, profile_type, created_at, crm_lead_code")
+        .select("id, name, company, location, contact_reason, profile_type, created_at, crm_lead_code, utm_source, utm_campaign, fbclid")
         .order("created_at", { ascending: false })
-        .limit(6),
+        .limit(8),
       supabase
         .from("newsletter_subscribers")
         .select("id", { count: "exact", head: true })
@@ -172,17 +172,18 @@ export async function getDashboardData() {
   const synced = recent30.filter((l) => l.crm_lead_code).length;
   const crmFailed = leads.filter((l) => !l.crm_lead_code && l.crm_error).length;
 
-  // ---- Leads por semana (últimas 8)
+  // ---- Leads por semana (últimas 12)
+  const WEEKS = 12;
   const thisWeek = weekStart(new Date(now));
-  const weeks = Array.from({ length: 8 }, (_, i) => {
+  const weeks = Array.from({ length: WEEKS }, (_, i) => {
     const start = new Date(thisWeek);
-    start.setDate(start.getDate() - (7 - i) * 7);
+    start.setDate(start.getDate() - (WEEKS - 1 - i) * 7);
     const end = new Date(start);
     end.setDate(end.getDate() + 7);
     return {
       label: start.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }),
       count: inRange(start.getTime(), end.getTime()),
-      current: i === 7,
+      current: i === WEEKS - 1,
     };
   });
 
@@ -234,7 +235,7 @@ export async function getDashboardData() {
     }).length;
   const downloadWeeks = weeks.map((w, i) => {
     const start = new Date(thisWeek);
-    start.setDate(start.getDate() - (7 - i) * 7);
+    start.setDate(start.getDate() - (WEEKS - 1 - i) * 7);
     const end = new Date(start);
     end.setDate(end.getDate() + 7);
     return { ...w, count: downloadsIn(start.getTime(), end.getTime()) };
@@ -243,6 +244,23 @@ export async function getDashboardData() {
   // ---- Suscriptores por origen e interés
   const subsAll = subsAllRes.data ?? [];
   const subs7 = subsAll.filter((x) => age(x.created_at) <= 7 * DAY).length;
+  const subsPrev7 = subsAll.filter(
+    (x) => age(x.created_at) > 7 * DAY && age(x.created_at) <= 14 * DAY,
+  ).length;
+  const subsWeeks = weeks.map((w, i) => {
+    const start = new Date(thisWeek);
+    start.setDate(start.getDate() - (WEEKS - 1 - i) * 7);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    const count = subsAll.filter((x) => {
+      const t = new Date(x.created_at).getTime();
+      return t >= start.getTime() && t < end.getTime();
+    }).length;
+    return { ...w, count };
+  });
+  // Catálogo más descargado en los últimos 30 días (para el resumen escrito)
+  const topCatalog30 =
+    [...catalogRows].sort((a, b) => b.d30 - a.d30).find((r) => r.d30 > 0) ?? null;
 
   return {
     catalogs: {
@@ -250,12 +268,16 @@ export async function getDashboardData() {
       last7: downloadsIn(now - 7 * DAY, now + 1),
       last30: downloadsIn(now - 30 * DAY, now + 1),
       prev30: downloadsIn(now - 60 * DAY, now - 30 * DAY),
+      prev7: downloadsIn(now - 14 * DAY, now - 7 * DAY),
+      top30: topCatalog30,
       weeks: downloadWeeks,
       bySource: topCounts(downloads.map((dl) => dl.source), DOWNLOAD_SOURCE_LABELS),
     },
     subscribers: {
       total: subsAll.length,
       last7: subs7,
+      prev7: subsPrev7,
+      weeks: subsWeeks,
       bySource: topCounts(subsAll.map((x) => x.source), SUBSCRIBER_SOURCE_LABELS),
       byInterest: topCounts(
         subsAll.map((x) => x.collection_slug),
